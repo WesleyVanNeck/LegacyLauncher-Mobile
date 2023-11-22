@@ -210,6 +210,9 @@ public class JREUtils {
         envMap.put("allow_higher_compat_version", "true");
         envMap.put("allow_glsl_extension_directive_midshader", "true");
         envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
+        envMap.put("PIPE_TEX_MIPFILTER_NONE", "true");
+        envMap.put("MESA_SHADER_CACHE_DISABLE", "true");
+        envMap.put("MESA_DISK_CACHE_SINGLE_FILE", "1");
         envMap.put("VTEST_SOCKET_NAME", new File(Tools.DIR_CACHE, ".virgl_test").getAbsolutePath());
 
         envMap.put("LD_LIBRARY_PATH", LD_LIBRARY_PATH);
