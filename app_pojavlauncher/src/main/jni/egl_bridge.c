@@ -209,8 +209,8 @@ int pojavInitOpenGL() {
         pojav_environ->config_renderer = RENDERER_VK_ZINK;
         setenv("GALLIUM_DRIVER", "panfrost", 1);
         setenv("PAN_DEBUG","gofaster",0);
-        setenv("PAN_DEBUG","gl3",
-            3.3)
+        setenv("MESA_GL_VERSION_OVERRIDE","3.3");
+        setenv("MESA_GLSL_VERSION_OVERRIDE","330");
         set_osm_bridge_tbl();
     }
     if(br_init()) {
