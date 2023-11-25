@@ -213,6 +213,7 @@ public class JREUtils {
         envMap.put("PIPE_TEX_MIPFILTER_NONE", "true");
         //envMap.put("MESA_SHADER_CACHE_DISABLE", "true");
         envMap.put("MESA_EXTENSION_OVERRIDE", "-GL_ARB_buffer_storage");
+        envMap.put("MESA_EXTENSION_OVERRIDE", "-GL_MAP_COHERENT_BIT");
         envMap.put("MESA_DISK_CACHE_SINGLE_FILE", "true");
         envMap.put("VTEST_SOCKET_NAME", new File(Tools.DIR_CACHE, ".virgl_test").getAbsolutePath());
 
