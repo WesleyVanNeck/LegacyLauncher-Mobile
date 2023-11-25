@@ -212,7 +212,7 @@ public class JREUtils {
         envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
         envMap.put("PIPE_TEX_MIPFILTER_NONE", "true");
         //envMap.put("MESA_SHADER_CACHE_DISABLE", "true");
-        envMap.put("MESA_DISK_CACHE_SINGLE_FILE", "1");
+        envMap.put("MESA_EXTENSION_OVERRIDE", "-GL_ARB_buffer_storage");
         envMap.put("MESA_DISK_CACHE_SINGLE_FILE", "true");
         envMap.put("VTEST_SOCKET_NAME", new File(Tools.DIR_CACHE, ".virgl_test").getAbsolutePath());
 
@@ -364,7 +364,8 @@ public class JREUtils {
 
                 "-Dnet.minecraft.clientmodname=" + Tools.APP_NAME,
                 "-Dfml.earlyprogresswindow=false", //Forge 1.14+ workaround
-                "-Dloader.disable_forked_guis=true"
+                "-Dloader.disable_forked_guis=true",
+                "-vd-lavc-dr=no"
         ));
         if(LauncherPreferences.PREF_ARC_CAPES) {
             overridableArguments.add("-javaagent:"+new File(Tools.DIR_DATA,"arc_dns_injector/arc_dns_injector.jar").getAbsolutePath()+"=23.95.137.176");
