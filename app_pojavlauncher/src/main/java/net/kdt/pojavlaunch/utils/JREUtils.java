@@ -203,7 +203,7 @@ public class JREUtils {
 
         envMap.put("FORCE_VSYNC", String.valueOf(LauncherPreferences.PREF_FORCE_VSYNC));
 
-        envMap.put("MESA_GLSL_CACHE_DIR", Tools.DIR_CACHE.getAbsolutePath());
+       // envMap.put("MESA_GLSL_CACHE_DIR", Tools.DIR_CACHE.getAbsolutePath());
         envMap.put("force_glsl_extensions_warn", "true");
         envMap.put("MESA_GLSL_VERSION_OVERRIDE", "330");
         envMap.put("MESA_GL_VERSION_OVERRIDE", "3.3");
@@ -212,9 +212,9 @@ public class JREUtils {
         envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
         envMap.put("PIPE_TEX_MIPFILTER_NONE", "true");
         //envMap.put("MESA_SHADER_CACHE_DISABLE", "true");
-        envMap.put("MESA_EXTENSION_OVERRIDE", "-GL_ARB_buffer_storage");
+       // envMap.put("MESA_EXTENSION_OVERRIDE", "-GL_ARB_buffer_storage");
         envMap.put("MESA_EXTENSION_OVERRIDE", "-GL_MAP_COHERENT_BIT");
-        envMap.put("MESA_DISK_CACHE_SINGLE_FILE", "true");
+       // envMap.put("MESA_DISK_CACHE_SINGLE_FILE", "true");
         envMap.put("VTEST_SOCKET_NAME", new File(Tools.DIR_CACHE, ".virgl_test").getAbsolutePath());
 
         envMap.put("LD_LIBRARY_PATH", LD_LIBRARY_PATH);
