@@ -14,6 +14,7 @@
 
 * It can run almost every version of Minecraft, allowing you to use .jar only installers to install modloaders such as [Forge](https://files.minecraftforge.net/) and [Fabric](http://fabricmc.net/), mods like [OptiFine](https://optifine.net) and [LabyMod](https://www.labymod.net/en), as well as hack clients like [Wurst](https://www.wurstclient.net/), and much more!
 
+
 * For more details [check out our wiki](https://github.com/PojavLauncherTeam/PojavLauncher/wiki)
 ## Some notes to start with
 - We do not have an official TikTok account. No one from the dev team makes TikTok videos. 
