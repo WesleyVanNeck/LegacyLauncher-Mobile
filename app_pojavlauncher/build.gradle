@@ -153,6 +153,10 @@ android {
             signingConfig signingConfigs.googlePlayBuild
         }
     }
+    
+    sourceSets.main {
+    resources.srcDir 'src/main/jnilibs/arm64-v8a/libz.so.1'
+    }
 
     ndkVersion = "25.2.9519653"
 
