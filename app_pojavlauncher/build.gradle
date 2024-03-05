@@ -41,6 +41,10 @@ def getVersionName = {
             }
         }
     }
+    
+    sourceSets.main {
+    resources.srcDir 'src/main/jnilibs/arm64/libz.so.1'
+    }
 
 
     if(TAG.toString() != ""){
