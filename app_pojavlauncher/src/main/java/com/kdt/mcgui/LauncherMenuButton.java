@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -12,7 +11,6 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
-
 
 import net.kdt.pojavlaunch.R;
 
@@ -22,24 +20,23 @@ public class LauncherMenuButton extends ExtendedButton {
 
     public LauncherMenuButton(@NonNull Context context) {
         super(context);
-        setSettings();
+        init();
     }
+
     public LauncherMenuButton(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        setSettings();
+        init();
     }
 
-
-    /** Set style stuff */
-    private void setSettings(){
-        Resources resources = getContext().getResources();
+    private void init() {
+        Resources resources = getResources();
 
         int padding = resources.getDimensionPixelSize(R.dimen._22sdp);
         setCompoundDrawablePadding(padding);
         setPaddingRelative(padding, 0, 0, 0);
         setGravity(Gravity.CENTER_VERTICAL);
 
-        setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimensionPixelSize(R.dimen._12ssp));
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimensionPixelSize(R.dimen._12ssp));
 
         // Set drawable size
         int[] sizes = getExtendedViewData().getSizeCompounds();
