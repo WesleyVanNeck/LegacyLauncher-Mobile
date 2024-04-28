@@ -1,234 +1,221 @@
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "string_utils.h"
 
 const char* AllSeparators = " \t\n\r.,;()[]{}-<>+*/%&\\\"'^$=!:?";
 
-char* ResizeIfNeeded(char* pBuffer, int *size, int addsize);
-
-char* InplaceReplace(char* pBuffer, int* size, const char* S, const char* D)
-{
-    int lS = strlen(S), lD = strlen(D);
-    pBuffer = ResizeIfNeeded(pBuffer, size, (lD-lS)*CountString(pBuffer, S));
-    char* p = pBuffer;
-    while((p = strstr(p, S)))
-    {
-        // found an occurence of S
-        // check if good to replace, strchr also found '\0' :)
-        if(strchr(AllSeparators, p[lS])!=NULL && (p==pBuffer || strchr(AllSeparators, p[-1])!=NULL)) {
-            // move out rest of string
-            memmove(p+lD, p+lS, strlen(p)-lS+1);
-            // replace
-            memcpy(p, D, strlen(D));
-            // next
-            p+=lD;
-        } else p+=lS;
+static inline char* ResizeIfNeeded(char* pBuffer, size_t* size, size_t addsize) {
+    if (addsize + strlen(pBuffer) + 1 > *size) {
+        size_t newsize = *size ? *size * 2 : 100;
+        while (newsize - addsize - strlen(pBuffer) - 1 <= 0)
+            newsize *= 2;
+        char* p = realloc(pBuffer, newsize);
+        if (!p) {
+            perror("realloc");
+            exit(EXIT_FAILURE);
+        }
+        *size = newsize;
+        pBuffer = p;
     }
-    
     return pBuffer;
 }
 
-char* InplaceInsert(char* pBuffer, const char* S, char* master, int* size)
-{
-    char* m = ResizeIfNeeded(master, size, strlen(S));
-    if(m!=master) {
-        pBuffer += (m-master);
-        master = m;
-    }
+static inline char* InplaceReplace(char* pBuffer, size_t* size, const char* S, const char* D) {
+    size_t lS = strlen(S), lD = strlen(D);
+    pBuffer = ResizeIfNeeded(pBuffer, size, (lD - lS) * CountString(pBuffer, S));
     char* p = pBuffer;
-    int lS = strlen(S), ll = strlen(pBuffer);
-    memmove(p+lS, p, ll+1);
+    while ((p = strstr(p, S))) {
+        // found an occurence of S
+        // check if good to replace, strchr also found '\0' :)
+        if (strchr(AllSeparators, p[lS]) && (p == pBuffer || strchr(AllSeparators, p[-1]))) {
+            // move out rest of string
+            memmove(p + lD, p + lS, strlen(p) - lS + 1);
+            // replace
+            memcpy(p, D, lD);
+            // next
+            p += lD;
+        } else {
+            p += lS;
+        }
+    }
+    return pBuffer;
+}
+
+static inline char* InplaceInsert(char* pBuffer, const char* S, size_t* size) {
+    size_t lS = strlen(S);
+    pBuffer = ResizeIfNeeded(pBuffer, size, lS);
+    if (!pBuffer) {
+        perror("realloc");
+        exit(EXIT_FAILURE);
+    }
+    char* p = pBuffer + strlen(pBuffer);
+    memmove(p + lS, p, strlen(p) + 1);
     memcpy(p, S, lS);
-
-    return master;
+    return pBuffer;
 }
 
-char* GetLine(char* pBuffer, int num)
-{
-    char *p = pBuffer;
-    while(num-- && (p=strstr(p, "\n"))) p+=strlen("\n");
-    return (p)?p:pBuffer;
+char* GetLine(char* pBuffer, int num) {
+    char* p = pBuffer;
+    while (num-- && (p = strchr(p, '\n')))
+        p++;
+    return p;
 }
 
-int CountLine(const char* pBuffer)
-{
-    int n=0;
+int CountLine(const char* pBuffer) {
     const char* p = pBuffer;
-    while((p=strstr(p, "\n"))) {
-        p+=strlen("\n");
+    int n = 0;
+    while ((p = strchr(p, '\n'))) {
+        p++;
         n++;
     }
     return n;
 }
 
-int GetLineFor(const char* pBuffer, const char* S)
-{
-    int n=0;
+int GetLineFor(const char* pBuffer, const char* S) {
     const char* p = pBuffer;
     const char* end = FindString(pBuffer, S);
-    if(!end)
+    if (!end)
         return 0;
-    while((p=strstr(p, "\n"))) {
-        p+=strlen("\n");
+    int n = 0;
+    while ((p = strchr(p, '\n'))) {
+        p++;
         n++;
-        if(p>=end)
+        if (p >= end)
             return n;
     }
     return n;
 }
 
-int CountString(const char* pBuffer, const char* S)
-{
+size_t CountString(const char* pBuffer, const char* S) {
     const char* p = pBuffer;
-    int lS = strlen(S);
-    int n = 0;
-    while((p = strstr(p, S)))
-    {
+    size_t lS = strlen(S);
+    size_t n = 0;
+    while ((p = strstr(p, S))) {
         // found an occurence of S
         // check if good to count, strchr also found '\0' :)
-        if(strchr(AllSeparators, p[lS])!=NULL && (p==pBuffer || strchr(AllSeparators, p[-1])!=NULL))
+        if (strchr(AllSeparators, p[lS]) && (p == pBuffer || strchr(AllSeparators, p[-1])))
             n++;
-        p+=lS;
+        p += lS;
     }
     return n;
 }
 
-const char* FindString(const char* pBuffer, const char* S)
-{
+const char* FindString(const char* pBuffer, const char* S) {
     const char* p = pBuffer;
-    int lS = strlen(S);
-    while((p = strstr(p, S)))
-    {
+    size_t lS = strlen(S);
+    while ((p = strstr(p, S))) {
         // found an occurence of S
         // check if good to count, strchr also found '\0' :)
-        if(strchr(AllSeparators, p[lS])!=NULL && (p==pBuffer || strchr(AllSeparators, p[-1])!=NULL))
+        if (strchr(AllSeparators, p[lS]) && (p == pBuffer || strchr(AllSeparators, p[-1])))
             return p;
-        p+=lS;
+        p += lS;
     }
     return NULL;
 }
 
-char* FindStringNC(char* pBuffer, const char* S)
-{
+char* FindStringNC(char* pBuffer, const char* S) {
     char* p = pBuffer;
-    int lS = strlen(S);
-    while((p = strstr(p, S)))
-    {
+    size_t lS = strlen(S);
+    while ((p = strstr(p, S))) {
         // found an occurence of S
         // check if good to count, strchr also found '\0' :)
-        if(strchr(AllSeparators, p[lS])!=NULL && (p==pBuffer || strchr(AllSeparators, p[-1])!=NULL))
+        if (strchr(AllSeparators, p[lS]) && (p == pBuffer || strchr(AllSeparators, p[-1])))
             return p;
-        p+=lS;
+        p += lS;
     }
     return NULL;
 }
 
-char* ResizeIfNeeded(char* pBuffer, int *size, int addsize) {
-    char* p = pBuffer;
-    int newsize = strlen(pBuffer)+addsize+1;
-    if (newsize>*size) {
-        newsize += 100;
-        p = (char*)realloc(pBuffer, newsize);
-        *size=newsize;
+char* Append(char* pBuffer, size_t* size, const char* S) {
+    size_t lS = strlen(S);
+    pBuffer = ResizeIfNeeded(pBuffer, size, lS + 1);
+    if (!pBuffer) {
+        perror("realloc");
+        exit(EXIT_FAILURE);
     }
-    return p;
-}
-
-char* Append(char* pBuffer, int* size, const char* S) {
-    char* p =pBuffer;
-    p = ResizeIfNeeded(pBuffer, size, strlen(S));
-    strcat(p, S);
-    return p;
-}
-
-int isBlank(char c)  {
-    switch(c) {
-        case ' ':
-        case '\t':
-        case '\n':
-        case '\r':
-        case ':':
-        case ',':
-        case ';':
-        case '/':
-            return 1;
-        default:
-            return 0;
-    }
-}
-char* StrNext(char *pBuffer, const char* S) {
-    if(!pBuffer) return NULL;
-    char *p = strstr(pBuffer, S);
-    return (p)?p:(p+strlen(S));
-}
-
-char* NextStr(char* pBuffer) {
-    if(!pBuffer) return NULL;
-    while(isBlank(*pBuffer))
-        ++pBuffer;
+    snprintf(pBuffer + strlen(pBuffer), *size - strlen(pBuffer), "%s", S);
     return pBuffer;
 }
 
-char* NextBlank(char* pBuffer) {
-    if(!pBuffer) return NULL;
-    while(!isBlank(*pBuffer))
-        ++pBuffer;
+static inline int isBlank(char c) {
+    return strchr(AllSeparators, c) ? 1 : 0;
+}
+
+static inline char* StrNext(char* pBuffer, const char* S) {
+    if (!pBuffer)
+        return NULL;
+    char* p = strstr(pBuffer, S);
+    return p ? p : (p + strlen(S));
+}
+
+static inline char* NextStr(char* pBuffer) {
+    if (!pBuffer)
+        return NULL;
+    while (isBlank(*pBuffer))
+        pBuffer++;
     return pBuffer;
 }
 
-char* NextLine(char* pBuffer) {
-    if(!pBuffer) return NULL;
-    while(*pBuffer && *pBuffer!='\n')
-        ++pBuffer;
+static inline char* NextBlank(char* pBuffer) {
+    if (!pBuffer)
+        return NULL;
+    while (!isBlank(*pBuffer))
+        pBuffer++;
+    return pBuffer;
+}
+
+static inline char* NextLine(char* pBuffer) {
+    if (!pBuffer)
+        return NULL;
+    while (*pBuffer && *pBuffer != '\n')
+        pBuffer++;
     return pBuffer;
 }
 
 const char* GetNextStr(char* pBuffer) {
     static char buff[100] = {0};
     buff[0] = '\0';
-    if(!pBuffer) return NULL;
+    if (!pBuffer)
+        return NULL;
     char* p1 = NextStr(pBuffer);
-    if(!p1) return buff;
+    if (!p1)
+        return buff;
     char* p2 = NextBlank(p1);
-    if(!p2) return buff;
-    int i=0;
-    while(p1!=p2 && i<99)
+    if (!p2)
+        return buff;
+    size_t i = 0;
+    while (p1 != p2 && i < sizeof(buff) - 1)
         buff[i++] = *(p1++);
     buff[i] = '\0';
     return buff;
 }
 
-int CountStringSimple(char* pBuffer, const char* S)
-{
+size_t CountStringSimple(char* pBuffer, const char* S) {
     char* p = pBuffer;
-    int lS = strlen(S);
-    int n = 0;
-    while((p = strstr(p, S)))
-    {
+    size_t lS = strlen(S);
+    size_t n = 0;
+    while ((p = strstr(p, S))) {
         // found an occurence of S
         n++;
-        p+=lS;
+        p += lS;
     }
     return n;
 }
 
-char* InplaceReplaceSimple(char* pBuffer, int* size, const char* S, const char* D)
-{
-    int lS = strlen(S), lD = strlen(D);
-    pBuffer = ResizeIfNeeded(pBuffer, size, (lD-lS)*CountStringSimple(pBuffer, S));
+char* InplaceReplaceSimple(char* pBuffer, size_t* size, const char* S, const char* D) {
+    size_t lS = strlen(S), lD = strlen(D);
+    pBuffer = ResizeIfNeeded(pBuffer, size, (lD - lS) * CountStringSimple(pBuffer, S));
     char* p = pBuffer;
-    while((p = strstr(p, S)))
-    {
+    while ((p = strstr(p, S))) {
         // found an occurence of S
         // move out rest of string
-        memmove(p+lD, p+lS, strlen(p)-lS+1);
+        memmove(p + lD, p + lS, strlen(p) - lS + 1);
         // replace
-        memcpy(p, D, strlen(D));
+        memcpy(p, D, lD);
         // next
-        p+=lD;
+        p += lD;
     }
-    
     return pBuffer;
 }
