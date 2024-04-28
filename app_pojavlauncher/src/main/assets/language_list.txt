@@ -1,39 +1,47 @@
-values-af-rZA
-values-ar-rSA
-values-ba-rRU
-values-ca-rES
-values-cs-rCZ
-values-da-rDK
-values-de-rDE
-values-el-rGR
-values-en-rGB
-values-en-rUS
-values-es-rES
-values-fil-rPH
-values-fi-rFI
-values-fr-rFR
-values-hu-rHU
-values-in-rID
-values-it-rIT
-values-iw-rIL
-values-ja-rJP
-values-kk-rKZ
-values-ko-rKR
-values-la-rLA
-values-lt-rLT
-values-nl-rNL
-values-no-rNO
-values-pl-rPL
-values-pt-rBR
-values-pt-rPT
-values-ro-rRO
-values-ru-rRU
-values-sr-rSP
-values-sv-rSE
-values-th-rTH
-values-tr-rTR
-values-tt-rRU
-values-uk-rUA
-values-vi-rVN
-values-zh-rCN
-values-zh-rTW
+<resources>
+    <string name="af_rZA" locale="af-ZA">South African Afrikaans</string>
+    <string name="ar_rSA" locale="ar-SA">Saudi Arabian Arabic</string>
+    <string name="ba_rRU" locale="ba-RU">Russian Bashkir</string>
+    <string name="ca_rES" locale="ca-ES">Catalan</string>
+    <string name="cs_rCZ" locale="cs-CZ">Czech</string>
+    <string name="da_rDK" locale="da-DK">Danish</string>
+    <string name="de_rDE" locale="de-DE">German</string>
+    <string name="el_rGR" locale="el-GR">Greek</string>
+    <string name="en_rGB" locale="en-GB">British English</string>
+    <string name="en_rUS" locale="en-US">American English</string>
+    <string name="es_rES" locale="es-ES">Spanish</string>
+    <string name="fil_rPH" locale="fil-PH">Filipino</string>
+    <string name="fi_rFI" locale="fi-FI">Finnish</string>
+    <string name="fr_rFR" locale="fr-FR">French</string>
+    <string name="hu_rHU" locale="hu-HU">Hungarian</string>
+    <string name="in_rID" locale="in-ID">Indonesian</string>
+    <string name="it_rIT" locale="it-IT">Italian</string>
+    <string name="iw_rIL" locale="iw-IL">Hebrew (Obsolete)</string>
+    <string name="he_rIL" locale="he-IL">Hebrew</string>
+    <string name="ja_rJP" locale="ja-JP">Japanese</string>
+    <string name="kk_rKZ" locale="kk-KZ">Kazakh</string>
+    <string name="ko_rKR" locale="ko-KR">Korean</string>
+    <string name="la_rLA" locale="la-LA">Latin (Obsolete)</string>
+    <string name="latin" locale="la-LA">Latin</string>
+    <string name="lt_rLT" locale="lt-LT">Lithuanian</string>
+    <string name="nl_rNL" locale="nl-NL">Dutch</string>
+    <string name="no_rNO" locale="no-NO">Norwegian</string>
+    <string name="pl_rPL" locale="pl-PL">Polish</string>
+    <string name="pt_rBR" locale="pt-BR">Brazilian Portuguese</string>
+    <string name="pt_rPT" locale="pt-PT">European Portuguese</string>
+    <string name="ro_rRO" locale="ro-RO">Romanian</string>
+    <string name="ru_rRU" locale="ru-RU">Russian</string>
+    <string name="sr_rSP" locale="sr-SP">Serbian (Latin, Serbia and Montenegro)</string>
+    <string name="sr_rRS" locale="sr-RS">Serbian (Cyrillic, Serbia)</string>
+    <string name="sr_latn_rRS" locale="sr-Latn-RS">Serbian (Latin, Serbia)</string>
+    <string name="sr_cyrl_rRS" locale="sr-Cyrl-RS">Serbian (Cyrillic, Serbia)</string>
+    <string name="sv_rSE" locale="sv-SE">Swedish</string>
+    <string name="th_rTH" locale="th-TH">Thai</string>
+    <string name="tr_rTR" locale="tr-TR">Turkish</string>
+    <string name="tt_rRU" locale="tt-RU">Tatar</string>
+    <string name="uk_rUA" locale="uk-UA">Ukrainian</string>
+    <string name="vi_rVN" locale="vi-VN">Vietnamese</string>
+    <string name="zh_rCN" locale="zh-CN">Simplified Chinese (China)</string>
+    <string name="zh_rTW" locale="zh-TW">Traditional Chinese (Taiwan)</string>
+    <string name="zh_rHK" locale="zh-HK">Traditional Chinese (Hong Kong SAR China)</string>
+</resources>
