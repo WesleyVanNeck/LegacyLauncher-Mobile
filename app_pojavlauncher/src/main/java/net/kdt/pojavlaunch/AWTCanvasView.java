@@ -1,36 +1,49 @@
 package net.kdt.pojavlaunch;
 
-import android.content.*;
-import android.graphics.*;
-import android.text.*;
-import android.util.*;
-import android.view.*;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.SurfaceTexture;
+import android.text.TextUtils;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.Surface;
+import android.view.TextureView;
+import android.view.ViewGroup;
 
-import java.util.*;
-import net.kdt.pojavlaunch.utils.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class AWTCanvasView extends TextureView implements TextureView.SurfaceTextureListener, Runnable {
+
     public static final int AWT_CANVAS_WIDTH = 720;
     public static final int AWT_CANVAS_HEIGHT = 600;
     private static final int MAX_SIZE = 100;
-    private static final double NANOS = 1000000000.0;
-    private boolean mIsDestroyed = false;
-    private final TextPaint mFpsPaint;
+    private static final double NANOS = 1_000_000_000.0;
+    private static final String TAG = "AWTCanvasView";
 
-    // Temporary count fps https://stackoverflow.com/a/13729241
-    private final LinkedList<Long> mTimes = new LinkedList<Long>(){{add(System.nanoTime());}};
-    
-    public AWTCanvasView(Context ctx) {
-        this(ctx, null);
+    private boolean isDestroyed = false;
+    private final TextPaint fpsPaint;
+
+    // Temporary count fps
+    private final List<Long> times = Collections.synchronizedList(new LinkedList<Long>() {{
+        add(System.nanoTime());
+    }});
+
+    public AWTCanvasView(Context context) {
+        this(context, null);
     }
-    
-    public AWTCanvasView(Context ctx, AttributeSet attrs) {
-        super(ctx, attrs);
-        
-        mFpsPaint = new TextPaint();
-        mFpsPaint.setColor(Color.WHITE);
-        mFpsPaint.setTextSize(20);
 
+    public AWTCanvasView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+
+        fpsPaint = new TextPaint();
+        fpsPaint.setColor(Color.WHITE);
+        fpsPaint.setTextSize(20);
 
         setSurfaceTextureListener(this);
 
@@ -38,26 +51,25 @@ public class AWTCanvasView extends TextureView implements TextureView.SurfaceTex
     }
 
     @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture texture, int w, int h) {
-        getSurfaceTexture().setDefaultBufferSize(AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT);
-        mIsDestroyed = false;
+    public void onSurfaceTextureAvailable(SurfaceTexture texture, int width, int height) {
+        setDefaultBufferSize(AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT);
+        isDestroyed = false;
         new Thread(this, "AndroidAWTRenderer").start();
     }
 
     @Override
-    public boolean onSurfaceTextureDestroyed(SurfaceTexture texture) {
-        mIsDestroyed = true;
-        return true;
+    public void onSurfaceTextureDestroyed(SurfaceTexture texture) {
+        isDestroyed = true;
     }
 
     @Override
-    public void onSurfaceTextureSizeChanged(SurfaceTexture texture, int w, int h) {
-        getSurfaceTexture().setDefaultBufferSize(AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT);
+    public void onSurfaceTextureSizeChanged(SurfaceTexture texture, int width, int height) {
+        setDefaultBufferSize(AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT);
     }
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture texture) {
-        getSurfaceTexture().setDefaultBufferSize(AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT);
+        // No-op
     }
 
     @Override
@@ -66,51 +78,71 @@ public class AWTCanvasView extends TextureView implements TextureView.SurfaceTex
         Surface surface = new Surface(getSurfaceTexture());
         Bitmap rgbArrayBitmap = Bitmap.createBitmap(AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT, Bitmap.Config.ARGB_8888);
         Paint paint = new Paint();
+
         try {
-            while (!mIsDestroyed && surface.isValid()) {
+            while (!isDestroyed && surface.isValid()) {
                 canvas = surface.lockCanvas(null);
+                if (canvas == null) {
+                    Log.e(TAG, "Canvas is null");
+                    continue;
+                }
+
                 canvas.drawRGB(0, 0, 0);
+
                 int[] rgbArray = JREUtils.renderAWTScreenFrame(/* canvas, mWidth, mHeight */);
-                boolean mDrawing = rgbArray != null;
+                boolean isDrawing = rgbArray != null;
+
                 if (rgbArray != null) {
                     canvas.save();
                     rgbArrayBitmap.setPixels(rgbArray, 0, AWT_CANVAS_WIDTH, 0, 0, AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT);
                     canvas.drawBitmap(rgbArrayBitmap, 0, 0, paint);
                     canvas.restore();
                 }
-                canvas.drawText("FPS: " + (Math.round(fps() * 10) / 10) + ", drawing=" + mDrawing, 0, 20, mFpsPaint);
+
+                String fpsText = "FPS: " + String.format("%.1f", fps()) + ", drawing=" + isDrawing;
+                canvas.drawText(fpsText, 0, 20, fpsPaint);
+
                 surface.unlockCanvasAndPost(canvas);
             }
         } catch (Throwable throwable) {
             Tools.showError(getContext(), throwable);
+        } finally {
+            rgbArrayBitmap.recycle();
+            surface.release();
         }
-        rgbArrayBitmap.recycle();
-        surface.release();
     }
 
-    /** Calculates and returns frames per second */
+    /**
+     * Calculates and returns frames per second
+     */
     private double fps() {
         long lastTime = System.nanoTime();
-        double difference = (lastTime - mTimes.getFirst()) / NANOS;
-        mTimes.addLast(lastTime);
-        int size = mTimes.size();
-        if (size > MAX_SIZE) {
-            mTimes.removeFirst();
+        double difference = 0;
+        synchronized (times) {
+            if (!times.isEmpty()) {
+                difference = (lastTime - times.getFirst()) / NANOS;
+                times.addLast(lastTime);
+            }
+            int size = times.size();
+            if (size > MAX_SIZE) {
+                times.removeFirst();
+            }
         }
-        return difference > 0 ? mTimes.size() / difference : 0.0;
+        return difference > 0 ? size / difference : 0.0;
     }
 
-    /** Make the view fit the proper aspect ratio of the surface */
-    private void refreshSize(){
+    /**
+     * Make the view fit the proper aspect ratio of the surface
+     */
+    private void refreshSize() {
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
 
-        if(getHeight() < getWidth()){
+        if (getHeight() < getWidth()) {
             layoutParams.width = AWT_CANVAS_WIDTH * getHeight() / AWT_CANVAS_HEIGHT;
-        }else{
+        } else {
             layoutParams.height = AWT_CANVAS_HEIGHT * getWidth() / AWT_CANVAS_WIDTH;
         }
 
         setLayoutParams(layoutParams);
     }
-
 }
