@@ -1,5 +1,3 @@
-// Keycodes from https://github.com/glfw/glfw/blob/master/include/GLFW/glfw3.h
-
 /*-************************************************************************
  * GLFW 3.4 - www.glfw.org
  * A library for OpenGL, window and input
@@ -30,10 +28,12 @@
 
 package net.kdt.pojavlaunch;
 
-@SuppressWarnings("unused")
+/**
+ * Constants for GLFW key codes.
+ */
 public class LwjglGlfwKeycode {
     /** The unknown key. */
-    public static final short GLFW_KEY_UNKNOWN = 0; // should be -1
+    public static final short GLFW_KEY_UNKNOWN_KEY = 0; // should be -1
 
     /** Printable keys. */
     public static final short
@@ -162,26 +162,21 @@ public class LwjglGlfwKeycode {
     GLFW_KEY_MENU          = 348,
     GLFW_KEY_LAST          = GLFW_KEY_MENU;
 
-    /** If this bit is set one or more Shift keys were held down. */
-    public static final int GLFW_MOD_SHIFT = 0x1;
+    /** Modifier keys. */
+    public static final long GLFW_MOD_SHIFT = 0x1;
+    public static final long GLFW_MOD_CONTROL = 0x2;
+    public static final long GLFW_MOD_ALT = 0x4;
+    public static final long GLFW_MOD_SUPER = 0x8;
+    public static final long GLFW_MOD_CAPS_LOCK = 0x10;
+    public static final long GLFW_MOD_NUM_LOCK = 0x20;
 
-    /** If this bit is set one or more Control keys were held down. */
-    public static final int GLFW_MOD_CONTROL = 0x2;
+    /** No modifier keys. */
+    public static final long GLFW_NO_MODS = 0;
 
-    /** If this bit is set one or more Alt keys were held down. */
-    public static final int GLFW_MOD_ALT = 0x4;
+    /** Any modifier key. */
+    public static final long GLFW_ANY_MOD = -1;
 
-    /** If this bit is set one or more Super keys were held down. */
-    public static final int GLFW_MOD_SUPER = 0x8;
-
-    /** If this bit is set the Caps Lock key is enabled and the LOCK_KEY_MODS input mode is set. */
-    public static final int GLFW_MOD_CAPS_LOCK = 0x10;
-
-    /** If this bit is set the Num Lock key is enabled and the LOCK_KEY_MODS input mode is set. */
-    public static final int GLFW_MOD_NUM_LOCK = 0x20;
-
-
-    /** Mouse buttons. See <a target="_blank" href="http://www.glfw.org/docs/latest/input.html#input_mouse_button">mouse button input</a> for how these are used. */
+    /** Mouse buttons. */
     public static final short
     GLFW_MOUSE_BUTTON_1      = 0,
     GLFW_MOUSE_BUTTON_2      = 1,
@@ -196,7 +191,12 @@ public class LwjglGlfwKeycode {
     GLFW_MOUSE_BUTTON_RIGHT  = GLFW_MOUSE_BUTTON_2,
     GLFW_MOUSE_BUTTON_MIDDLE = GLFW_MOUSE_BUTTON_3;
 
-    public static final int
-    GLFW_VISIBLE                 = 0x20004,
-    GLFW_HOVERED                 = 0x2000B;
+    /** No mouse button. */
+    public static final short GLFW_MOUSE_BUTTON_NONE = -1;
+
+    /** Visible state of a window. */
+    public static final int GLFW_VISIBLE = 0x20004;
+
+    /** Hovered state of a window. */
+    public static final int GLFW_HOVERED = 0x2000B;
 }
