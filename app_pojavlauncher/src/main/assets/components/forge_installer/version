@@ -1,1 +1,16 @@
-1692525087345
+from datetime import datetime
+
+def unix_timestamp_to_date(timestamp: int) -> str:
+    """
+    Converts a Unix timestamp to a human-readable date.
+
+    :param timestamp: The Unix timestamp to convert.
+    :return: A string representing the date and time.
+    """
+    dt_object = datetime.fromtimestamp(timestamp)
+    return dt_object.strftime('%Y-%m-%d %H:%M:%S')
+
+if __name__ == "__main__":
+    unix_timestamp = 1692525087345
+    formatted_date = unix_timestamp_to_date(unix_timestamp)
+    print(formatted_date)
