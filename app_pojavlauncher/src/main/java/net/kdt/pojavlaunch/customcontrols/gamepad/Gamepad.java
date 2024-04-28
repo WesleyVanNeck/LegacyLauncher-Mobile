@@ -1,6 +1,5 @@
 package net.kdt.pojavlaunch.customcontrols.gamepad;
 
-
 import static android.view.MotionEvent.AXIS_HAT_X;
 import static android.view.MotionEvent.AXIS_HAT_Y;
 import static android.view.MotionEvent.AXIS_LTRIGGER;
@@ -26,11 +25,22 @@ import androidx.core.math.MathUtils;
 
 import net.kdt.pojavlaunch.GrabListener;
 import net.kdt.pojavlaunch.LwjglGlfwKeycode;
-import net.kdt.pojavlaunch.R;
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
-import net.kdt.pojavlaunch.utils.MCOptionUtils;
-
+import net.kdt.pojavlaunch.Tools.currentDisplayMetrics;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_NONE;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_NORTH;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_NORTH_EAST;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_NORTH_WEST;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_SOUTH;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_SOUTH_EAST;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_SOUTH_WEST;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_EAST;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.DIRECTION_WEST;
+import net.kdt.pojavlaunch.customcontrols.gamepad.GamepadJoystick.isJoystickEvent;
+import net.kdt.pojavlaunch.prefs.LauncherPreferences.PREF_DEADZONE_SCALE;
+import net.kdt.pojavlaunch.utils.MCOptionUtils.getMcScale;
+import net.kdt.pojavlaunch.utils.MCOptionUtils.MCOptionListener;
 import org.lwjgl.glfw.CallbackBridge;
 
 import static net.kdt.pojavlaunch.Tools.currentDisplayMetrics;
@@ -82,7 +92,6 @@ public class Gamepad implements GrabListener, GamepadHandler {
     // The negation is to force trigger the onGrabState
     private boolean isGrabbing = !CallbackBridge.isGrabbing();
 
-
     /* Choreographer with time to compute delta on ticking */
     private final Choreographer mScreenChoreographer;
     private long mLastFrameTime;
@@ -111,7 +120,6 @@ public class Gamepad implements GrabListener, GamepadHandler {
         mLeftJoystick = new GamepadJoystick(AXIS_X, AXIS_Y, inputDevice);
         mRightJoystick = new GamepadJoystick(AXIS_Z, AXIS_RZ, inputDevice);
 
-
         Context ctx = contextView.getContext();
         mPointerImageView = new ImageView(contextView.getContext());
         mPointerImageView.setImageDrawable(ResourcesCompat.getDrawable(ctx.getResources(), R.drawable.ic_gamepad_pointer, ctx.getTheme()));
@@ -128,9 +136,6 @@ public class Gamepad implements GrabListener, GamepadHandler {
         CallbackBridge.addGrabListener(this);
     }
 
-
-
-
     public void updateJoysticks(){
         updateDirectionalJoystick();
         updateMouseJoystick();
@@ -142,7 +147,6 @@ public class Gamepad implements GrabListener, GamepadHandler {
         mPointerImageView.post(() -> mPointerImageView.setLayoutParams(new FrameLayout.LayoutParams(size, size)));
 
     }
-
 
     public static void sendInput(int[] keycodes, boolean isDown){
         for(int keycode : keycodes){
@@ -160,7 +164,6 @@ public class Gamepad implements GrabListener, GamepadHandler {
                 case LwjglGlfwKeycode.GLFW_MOUSE_BUTTON_LEFT:
                     sendMouseButton(LwjglGlfwKeycode.GLFW_MOUSE_BUTTON_LEFT, isDown);
                     break;
-
 
                 default:
                     sendKeyPress(keycode, CallbackBridge.getCurrentMods(), isDown);
@@ -252,7 +255,6 @@ public class Gamepad implements GrabListener, GamepadHandler {
         sendDirectionalKeycode(lastJoystickDirection, false, getCurrentMap());
         sendDirectionalKeycode(mCurrentJoystickDirection, true, getCurrentMap());
     }
-
 
     private GamepadMap getCurrentMap(){
         return mCurrentMap;
