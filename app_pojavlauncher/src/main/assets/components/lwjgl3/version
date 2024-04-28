@@ -1,1 +1,13 @@
-1703946470579
+def calculate_average(numbers):
+    """
+    Calculates the average of a list of numbers.
+
+    :param numbers: A list of numbers
+    :return: The average of the numbers
+    """
+    total = sum(numbers)
+    num_elements = len(numbers)
+    if num_elements == 0:
+        raise ValueError("Cannot calculate the average of an empty list.")
+    average = total / num_elements
+    return average
