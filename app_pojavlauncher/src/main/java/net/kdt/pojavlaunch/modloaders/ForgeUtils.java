@@ -19,48 +19,66 @@ import javax.xml.parsers.SAXParserFactory;
 
 public class ForgeUtils {
     private static final String FORGE_METADATA_URL = "https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml";
-    private static final String FORGE_INSTALLER_URL = "https://maven.minecraftforge.net/net/minecraftforge/forge/%1$s/forge-%1$s-installer.jar";
+    private static final String FORGE_INSTALLER_URL_TEMPLATE = "https://maven.minecraftforge.net/net/minecraftforge/forge/%s/forge-%s-installer.jar";
+
     public static List<String> downloadForgeVersions() throws IOException {
-        SAXParser saxParser;
+        SAXParser saxParser = null;
         try {
             SAXParserFactory parserFactory = SAXParserFactory.newInstance();
             saxParser = parserFactory.newSAXParser();
-        }catch (SAXException | ParserConfigurationException e) {
-            e.printStackTrace();
-            // if we cant make a parser we might as well not even try to parse anything
-            return null;
-        }
-        try {
-            //of_test();
-            return DownloadUtils.downloadStringCached(FORGE_METADATA_URL, "forge_versions", input -> {
-                try {
-                    ForgeVersionListHandler handler = new ForgeVersionListHandler();
-                    saxParser.parse(new InputSource(new StringReader(input)), handler);
-                    return handler.getVersions();
-                    // IOException is present here StringReader throws it only if the parser called close()
-                    // sooner than needed, which is a parser issue and not an I/O one
-                }catch (SAXException | IOException e) {
-                    throw new DownloadUtils.ParseException(e);
-                }
-            });
-        }catch (DownloadUtils.ParseException e) {
+        } catch (SAXException | ParserConfigurationException e) {
             e.printStackTrace();
             return null;
         }
 
+        if (saxParser == null) {
+            return null;
+        }
+
+        return DownloadUtils.downloadStringCached(FORGE_METADATA_URL, "forge_versions", input -> {
+            ForgeVersionListHandler handler = new ForgeVersionListHandler();
+            try {
+                saxParser.parse(new InputSource(new StringReader(input)), handler);
+                return handler.getVersions();
+            } catch (SAXException | IOException e) {
+                throw new DownloadUtils.ParseException(e);
+            }
+        });
     }
+
     public static String getInstallerUrl(String version) {
-        return String.format(FORGE_INSTALLER_URL, version);
+        return String.format(FORGE_INSTALLER_URL_TEMPLATE, version, version);
     }
 
     public static void addAutoInstallArgs(Intent intent, File modInstallerJar, boolean createProfile) {
-        intent.putExtra("javaArgs", "-javaagent:"+ Tools.DIR_DATA+"/forge_installer/forge_installer.jar"
+        intent.putExtra("javaArgs", "-javaagent:" + Tools.DIR_DATA + "/forge_installer/forge_installer.jar"
                 + (createProfile ? "=NPS" : "") + // No Profile Suppression
-                " -jar "+modInstallerJar.getAbsolutePath());
+                " -jar " + modInstallerJar.getAbsolutePath());
     }
+
     public static void addAutoInstallArgs(Intent intent, File modInstallerJar, String modpackFixupId) {
-        intent.putExtra("javaArgs", "-javaagent:"+ Tools.DIR_DATA+"/forge_installer/forge_installer.jar"
-                + "=\"" + modpackFixupId +"\"" +
-                " -jar "+modInstallerJar.getAbsolutePath());
+        intent.putExtra("javaArgs", "-javaagent:" + Tools.DIR_DATA + "/forge_installer/forge_installer.jar"
+                + "=\"" + modpackFixupId + "\"" +
+                " -jar " + modInstallerJar.getAbsolutePath());
+    }
+
+    public static File downloadForgeInstaller(String version) throws IOException {
+        String url = getInstallerUrl(version);
+        return DownloadUtils.downloadFileCached(url, "forge_installer/" + version + "_installer.jar");
+    }
+}
+
+class ForgeVersionListHandler extends DefaultHandler {
+    private List<String> versions;
+
+    public List<String> getVersions() {
+        return versions;
+    }
+
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        if (qName.equalsIgnoreCase("version")) {
+            versions.add(attributes.getValue("id"));
+        }
     }
 }
