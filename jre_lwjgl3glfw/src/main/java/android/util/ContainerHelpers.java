@@ -16,39 +16,26 @@
 
 package android.util;
 
+import java.util.Comparator;
+
 class ContainerHelpers {
 
-    // This is Arrays.binarySearch(), but doesn't do any argument validation.
-    static int binarySearch(int[] array, int size, int value) {
-        int lo = 0;
-        int hi = size - 1;
-
-        while (lo <= hi) {
-            final int mid = (lo + hi) >>> 1;
-            final int midVal = array[mid];
-
-            if (midVal < value) {
-                lo = mid + 1;
-            } else if (midVal > value) {
-                hi = mid - 1;
-            } else {
-                return mid;  // value found
-            }
-        }
-        return ~lo;  // value not present
+    static <T extends Comparable<T>> int binarySearch(T[] array, int size, T value) {
+        return binarySearch(array, size, value, Comparable::compareTo);
     }
 
-    static int binarySearch(long[] array, int size, long value) {
+    static <T> int binarySearch(T[] array, int size, T value, Comparator<T> comparator) {
         int lo = 0;
         int hi = size - 1;
 
         while (lo <= hi) {
             final int mid = (lo + hi) >>> 1;
-            final long midVal = array[mid];
+            final T midVal = array[mid];
 
-            if (midVal < value) {
+            int cmp = comparator.compare(midVal, value);
+            if (cmp < 0) {
                 lo = mid + 1;
-            } else if (midVal > value) {
+            } else if (cmp > 0) {
                 hi = mid - 1;
             } else {
                 return mid;  // value found
