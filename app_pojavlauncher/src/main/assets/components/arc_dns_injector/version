@@ -1,1 +1,9 @@
-1687691695196
+import time
+import random
+
+def generate_unique_id():
+    return int(time.time() * 1000) + random.randint(0, 999)
+
+# Generate a unique ID
+unique_id = generate_unique_id()
+print(unique_id)
