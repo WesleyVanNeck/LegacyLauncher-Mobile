@@ -1,7 +1,13 @@
-package git.artdeell.installer_agent;
+package com.example.installer_agent;
 
 import java.awt.*;
+import java.util.function.Predicate;
 
-public interface ComponentFilter {
-    boolean checkComponent(Component component);
-}
+/**
+ * Interface for filtering {@link Component} objects.
+ */
+@FunctionalInterface
+public interface ComponentFilter extends Predicate<Component> {
+
+    /**
+
