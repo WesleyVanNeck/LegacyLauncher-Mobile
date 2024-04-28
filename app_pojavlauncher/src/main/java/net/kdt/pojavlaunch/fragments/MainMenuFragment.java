@@ -1,13 +1,17 @@
 package net.kdt.pojavlaunch.fragments;
 
+import static net.kdt.pojavlaunch.Tools.openURL;
+import static net.kdt.pojavlaunch.Tools.swapFragment;
+import static net.kdt.pojavlaunch.Tools.installMod;
+import static net.kdt.pojavlaunch.Tools.swapFragment;
 import static net.kdt.pojavlaunch.Tools.shareLog;
+import static net.kdt.pojavlaunch.ProgressKeeper.getTaskCount;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,30 +37,31 @@ public class MainMenuFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        Button mNewsButton = view.findViewById(R.id.news_button);
-        Button mCustomControlButton = view.findViewById(R.id.custom_control_button);
-        Button mInstallJarButton = view.findViewById(R.id.install_jar_button);
-        Button mShareLogsButton = view.findViewById(R.id.share_logs_button);
+        Button newsButton = view.findViewById(R.id.news_button);
+        Button customControlButton = view.findViewById(R.id.custom_control_button);
+        Button installJarButton = view.findViewById(R.id.install_jar_button);
+        Button shareLogsButton = view.findViewById(R.id.share_logs_button);
 
-        ImageButton mEditProfileButton = view.findViewById(R.id.edit_profile_button);
-        Button mPlayButton = view.findViewById(R.id.play_button);
+        ImageButton editProfileButton = view.findViewById(R.id.edit_profile_button);
+        Button playButton = view.findViewById(R.id.play_button);
+
         mVersionSpinner = view.findViewById(R.id.mc_version_spinner);
 
-        mNewsButton.setOnClickListener(v -> Tools.openURL(requireActivity(), Tools.URL_HOME));
-        mCustomControlButton.setOnClickListener(v -> startActivity(new Intent(requireContext(), CustomControlsActivity.class)));
-        mInstallJarButton.setOnClickListener(v -> runInstallerWithConfirmation(false));
-        mInstallJarButton.setOnLongClickListener(v->{
+        newsButton.setOnClickListener(v -> openURL(requireActivity(), Tools.URL_HOME));
+        customControlButton.setOnClickListener(v -> startActivity(new Intent(requireContext(), CustomControlsActivity.class)));
+        installJarButton.setOnClickListener(v -> runInstallerWithConfirmation(false));
+        installJarButton.setOnLongClickListener(v->{
             runInstallerWithConfirmation(true);
             return true;
         });
-        mEditProfileButton.setOnClickListener(v -> mVersionSpinner.openProfileEditor(requireActivity()));
+        editProfileButton.setOnClickListener(v -> mVersionSpinner.openProfileEditor(requireActivity()));
 
-        mPlayButton.setOnClickListener(v -> ExtraCore.setValue(ExtraConstants.LAUNCH_GAME, true));
+        playButton.setOnClickListener(v -> ExtraCore.setValue(ExtraConstants.LAUNCH_GAME, true));
 
-        mShareLogsButton.setOnClickListener((v) -> shareLog(requireContext()));
+        shareLogsButton.setOnClickListener((v) -> shareLog(requireContext()));
 
-        mNewsButton.setOnLongClickListener((v)->{
-            Tools.swapFragment(requireActivity(), SearchModFragment.class, SearchModFragment.TAG, null);
+        newsButton.setOnLongClickListener((v)->{
+            swapFragment(requireActivity(), SearchModFragment.class, SearchModFragment.TAG, null);
             return true;
         });
     }
@@ -68,8 +73,8 @@ public class MainMenuFragment extends Fragment {
     }
 
     private void runInstallerWithConfirmation(boolean isCustomArgs) {
-        if (ProgressKeeper.getTaskCount() == 0)
-            Tools.installMod(requireActivity(), isCustomArgs);
+        if (getTaskCount() == 0)
+            installMod(requireActivity(), isCustomArgs);
         else
             Toast.makeText(requireContext(), R.string.tasks_ongoing, Toast.LENGTH_LONG).show();
     }
