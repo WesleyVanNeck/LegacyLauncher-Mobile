@@ -25,31 +25,55 @@ import org.lwjgl.glfw.CallbackBridge;
 
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
+import java.util.Arrays;
+
 @SuppressLint("ViewConstructor")
 public class ControlJoystick extends JoystickView implements ControlInterface {
-    public final static int DIRECTION_FORWARD_LOCK = 8;
-    // Directions keycode
-    private final int[] mDirectionForwardLock = new int[]{LwjglGlfwKeycode.GLFW_KEY_LEFT_CONTROL};
-    private final int[] mDirectionForward = new int[]{LwjglGlfwKeycode.GLFW_KEY_W};
-    private final int[] mDirectionRight = new int[]{LwjglGlfwKeycode.GLFW_KEY_D};
-    private final int[] mDirectionBackward = new int[]{LwjglGlfwKeycode.GLFW_KEY_S};
-    private final int[] mDirectionLeft = new int[]{LwjglGlfwKeycode.GLFW_KEY_A};
-    private ControlJoystickData mControlData;
-    private int mLastDirectionInt = GamepadJoystick.DIRECTION_NONE;
-    private int mCurrentDirectionInt = GamepadJoystick.DIRECTION_NONE;
+
+    /**
+     * The keycodes for the directions
+     */
+    private final int[] directionForwardLock;
+    private final int[] directionForward;
+    private final int[] directionRight;
+    private final int[] directionBackward;
+    private final int[] directionLeft;
+
+    private ControlJoystickData controlData;
+    private int lastDirectionInt = DIRECTION_NONE;
+    private int currentDirectionInt = DIRECTION_NONE;
+
+    /**
+     * Constructor for the ControlJoystick class
+     *
+     * @param parent the parent ControlLayout
+     * @param data   the ControlJoystickData
+     */
     public ControlJoystick(ControlLayout parent, ControlJoystickData data) {
         super(parent.getContext());
         init(data, parent);
     }
 
+    /**
+     * Sends input for the given keys
+     *
+     * @param keys   the keys to send input for
+     * @param isDown true if the keys are being pressed, false otherwise
+     */
     private static void sendInput(int[] keys, boolean isDown) {
         for (int key : keys) {
             CallbackBridge.sendKeyPress(key, CallbackBridge.getCurrentMods(), isDown);
         }
     }
 
+    /**
+     * Initializes the ControlJoystick
+     *
+     * @param data   the ControlJoystickData
+     * @param layout the ControlLayout
+     */
     private void init(ControlJoystickData data, ControlLayout layout) {
-        mControlData = data;
+        this.controlData = data;
         setProperties(preProcessProperties(data, layout));
         setDeadzone(35);
         setFixedCenter(data.absolute);
@@ -60,18 +84,18 @@ public class ControlJoystick extends JoystickView implements ControlInterface {
         setOnMoveListener(new OnMoveListener() {
             @Override
             public void onMove(int angle, int strength) {
-                mLastDirectionInt = mCurrentDirectionInt;
-                mCurrentDirectionInt = getDirectionInt(angle, strength);
+                lastDirectionInt = currentDirectionInt;
+                currentDirectionInt = getDirectionInt(angle, strength);
 
-                if (mLastDirectionInt != mCurrentDirectionInt) {
-                    sendDirectionalKeycode(mLastDirectionInt, false);
-                    sendDirectionalKeycode(mCurrentDirectionInt, true);
+                if (lastDirectionInt != currentDirectionInt) {
+                    sendDirectionalKeycode(lastDirectionInt, false);
+                    sendDirectionalKeycode(currentDirectionInt, true);
                 }
             }
 
             @Override
             public void onForwardLock(boolean isLocked) {
-                sendInput(mDirectionForwardLock, isLocked);
+                sendInput(directionForwardLock, isLocked);
             }
         });
     }
@@ -83,87 +107,110 @@ public class ControlJoystick extends JoystickView implements ControlInterface {
 
     @Override
     public ControlData getProperties() {
-        return mControlData;
+        return controlData;
     }
 
     @Override
     public void setProperties(ControlData properties, boolean changePos) {
-        mControlData = (ControlJoystickData) properties;
-        mControlData.isHideable = true;
-        ControlInterface.super.setProperties(properties, changePos);
-        postDelayed(() -> {
-            setForwardLockDistance(mControlData.forwardLock ? (int) Tools.dpToPx(60) : 0);
-            setFixedCenter(mControlData.absolute);
-        }, 10);
+        if (properties instanceof ControlJoystickData) {
+            controlData = (ControlJoystickData) properties;
+            controlData.isHideable = true;
+            ControlInterface.super.setProperties(properties, changePos);
+            postDelayed(() -> {
+                setForwardLockDistance(controlData.forwardLock ? (int) Tools.dpToPx(60) : 0);
+                setFixedCenter(controlData.absolute);
+            }, 10);
+        }
     }
 
     @Override
     public void removeButton() {
-        getControlLayoutParent().getLayout().mJoystickDataList.remove(getProperties());
-        getControlLayoutParent().removeView(this);
+        ControlLayout parent = getControlLayoutParent();
+        if (parent != null) {
+            parent.getLayout().joystickDataList.remove(getProperties());
+            parent.removeView(this);
+        }
     }
 
     @Override
     public void cloneButton() {
-        ControlJoystickData data = new ControlJoystickData(mControlData);
-        getControlLayoutParent().addJoystickButton(data);
+        ControlLayout parent = getControlLayoutParent();
+        if (parent != null) {
+            ControlJoystickData data = new ControlJoystickData(controlData);
+            parent.addJoystickButton(data);
+        }
     }
-
 
     @Override
     public void setBackground() {
-        setBorderWidth((int) Tools.dpToPx(getProperties().strokeWidth * (getControlLayoutParent().getLayoutScale()/100f)));
+        setBorderWidth((int) Tools.dpToPx(getProperties().strokeWidth * (getControlLayoutParent().getLayoutScale() / 100f)));
         setBorderColor(getProperties().strokeColor);
         setBackgroundColor(getProperties().bgColor);
     }
 
     @Override
-    public void sendKeyPresses(boolean isDown) {/*STUB since non swipeable*/ }
+    public void sendKeyPresses(boolean isDown) {
+        // STUB since non swipeable
+    }
 
     @Override
     public void loadEditValues(EditControlPopup editControlPopup) {
-        editControlPopup.loadJoystickValues(mControlData);
+        editControlPopup.loadJoystickValues(controlData);
     }
 
+    /**
+     * Gets the direction int from the given angle and intensity
+     *
+     * @param angle   the angle
+     * @param intensity the intensity
+     * @return the direction int
+     */
     private int getDirectionInt(int angle, int intensity) {
         if (intensity == 0) return DIRECTION_NONE;
-        return (int) (((angle + 22.5) / 45) % 8);
+        int directionInt = (int) (((angle + 22.5) / 45) % 8);
+        if (directionInt < 0) directionInt += 8;
+        return directionInt;
     }
 
+    /**
+     * Sends directional keycode
+     *
+     * @param direction the direction
+     * @param isDown    true if the keys are being pressed, false otherwise
+     */
     private void sendDirectionalKeycode(int direction, boolean isDown) {
         switch (direction) {
             case DIRECTION_NORTH:
-                sendInput(mDirectionForward, isDown);
+                sendInput(directionForward, isDown);
                 break;
             case DIRECTION_NORTH_EAST:
-                sendInput(mDirectionForward, isDown);
-                sendInput(mDirectionRight, isDown);
+                sendInput(directionForward, isDown);
+                sendInput(directionRight, isDown);
                 break;
             case DIRECTION_EAST:
-                sendInput(mDirectionRight, isDown);
+                sendInput(directionRight, isDown);
                 break;
             case DIRECTION_SOUTH_EAST:
-                sendInput(mDirectionRight, isDown);
-                sendInput(mDirectionBackward, isDown);
+                sendInput(directionRight, isDown);
+                sendInput(directionBackward, isDown);
                 break;
             case DIRECTION_SOUTH:
-                sendInput(mDirectionBackward, isDown);
+                sendInput(directionBackward, isDown);
                 break;
             case DIRECTION_SOUTH_WEST:
-                sendInput(mDirectionBackward, isDown);
-                sendInput(mDirectionLeft, isDown);
+                sendInput(directionBackward, isDown);
+                sendInput(directionLeft, isDown);
                 break;
             case DIRECTION_WEST:
-                sendInput(mDirectionLeft, isDown);
+                sendInput(directionLeft, isDown);
                 break;
             case DIRECTION_NORTH_WEST:
-                sendInput(mDirectionForward, isDown);
-                sendInput(mDirectionLeft, isDown);
+                sendInput(directionForward, isDown);
+                sendInput(directionLeft, isDown);
                 break;
             case DIRECTION_FORWARD_LOCK:
-                sendInput(mDirectionForwardLock, isDown);
+                sendInput(directionForwardLock, isDown);
                 break;
         }
     }
-
 }
