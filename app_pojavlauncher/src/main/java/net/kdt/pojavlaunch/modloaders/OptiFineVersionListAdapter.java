@@ -7,34 +7,38 @@ import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListAdapter;
 import android.widget.TextView;
 
+import java.util.List;
+
 public class OptiFineVersionListAdapter extends BaseExpandableListAdapter implements ExpandableListAdapter {
 
-    private final OptiFineUtils.OptiFineVersions mOptiFineVersions;
-    private final LayoutInflater mLayoutInflater;
+    private final LayoutInflater layoutInflater;
+    private final List<String> minecraftVersions;
+    private final List<List<OptiFineUtils.OptiFineVersion>> optifineVersions;
 
-    public OptiFineVersionListAdapter(OptiFineUtils.OptiFineVersions optiFineVersions, LayoutInflater mLayoutInflater) {
-        mOptiFineVersions = optiFineVersions;
-        this.mLayoutInflater = mLayoutInflater;
+    public OptiFineVersionListAdapter(LayoutInflater layoutInflater, List<String> minecraftVersions, List<List<OptiFineUtils.OptiFineVersion>> optifineVersions) {
+        this.layoutInflater = layoutInflater;
+        this.minecraftVersions = minecraftVersions;
+        this.optifineVersions = optifineVersions;
     }
 
     @Override
     public int getGroupCount() {
-        return mOptiFineVersions.minecraftVersions.size();
+        return minecraftVersions.size();
     }
 
     @Override
     public int getChildrenCount(int i) {
-        return mOptiFineVersions.optifineVersions.get(i).size();
+        return optifineVersions.get(i).size();
     }
 
     @Override
     public Object getGroup(int i) {
-        return mOptiFineVersions.minecraftVersions.get(i);
+        return minecraftVersions.get(i);
     }
 
     @Override
     public Object getChild(int i, int i1) {
-        return mOptiFineVersions.optifineVersions.get(i).get(i1);
+        return optifineVersions.get(i).get(i1);
     }
 
     @Override
@@ -54,19 +58,26 @@ public class OptiFineVersionListAdapter extends BaseExpandableListAdapter implem
 
     @Override
     public View getGroupView(int i, boolean b, View convertView, ViewGroup viewGroup) {
-        if(convertView == null)
-            convertView = mLayoutInflater.inflate(android.R.layout.simple_expandable_list_item_1, viewGroup, false);
+        if (convertView == null) {
+            convertView = layoutInflater.inflate(android.R.layout.simple_expandable_list_item_1, viewGroup, false);
+        }
 
-        ((TextView) convertView).setText((String)getGroup(i));
+        TextView textView = convertView.findViewById(android.R.id.text1);
+        textView.setText((String) getGroup(i));
 
         return convertView;
     }
 
     @Override
     public View getChildView(int i, int i1, boolean b, View convertView, ViewGroup viewGroup) {
-        if(convertView == null)
-            convertView = mLayoutInflater.inflate(android.R.layout.simple_expandable_list_item_1, viewGroup, false);
-        ((TextView) convertView).setText(((OptiFineUtils.OptiFineVersion)getChild(i,i1)).versionName);
+        if (convertView == null) {
+            convertView = layoutInflater.inflate(android.R.layout.simple_expandable_list_item_1, viewGroup, false);
+        }
+
+        OptiFineUtils.OptiFineVersion optiFineVersion = (OptiFineUtils.OptiFineVersion) getChild(i, i1);
+        TextView textView = convertView.findViewById(android.R.id.text1);
+        textView.setText(optiFineVersion.versionName);
+
         return convertView;
     }
 
