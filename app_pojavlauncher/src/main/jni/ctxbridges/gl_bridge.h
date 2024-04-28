@@ -1,28 +1,41 @@
 //
-// Created by maks on 17.09.2022.
+// Created by Your Name on Your Date.
 //
-#include <EGL//egl.h>
+#ifndef GL_BRIDGE_H
+#define GL_BRIDGE_H
+
+#include <EGL/egl.h>
 #include <stdbool.h>
-#ifndef POJAVLAUNCHER_GL_BRIDGE_H
-#define POJAVLAUNCHER_GL_BRIDGE_H
 
 typedef struct {
-    char       state;
+    char state;
     struct ANativeWindow *nativeSurface;
     struct ANativeWindow *newNativeSurface;
-    EGLConfig  config;
-    EGLint     format;
+    EGLConfig config;
+    EGLint format;
     EGLContext context;
     EGLSurface surface;
 } gl_render_window_t;
 
-bool gl_init();
-gl_render_window_t* gl_get_current();
-gl_render_window_t* gl_init_context(gl_render_window_t* share);
-void gl_make_current(gl_render_window_t* bundle);
-void gl_swap_buffers();
-void gl_setup_window();
+// Initializes the GL context
+bool gl_init(void);
+
+// Gets the current GL rendering window
+gl_render_window_t *gl_get_current(void);
+
+// Initializes the GL context with sharing
+gl_render_window_t *gl_init_context(gl_render_window_t *share);
+
+// Makes the specified GL rendering window current
+void gl_make_current(gl_render_window_t *bundle);
+
+// Swaps the buffers of the current GL rendering window
+void gl_swap_buffers(void);
+
+// Sets up the GL rendering window
+void gl_setup_window(void);
+
+// Sets the swap interval for the current GL rendering window
 void gl_swap_interval(int swapInterval);
 
-
-#endif //POJAVLAUNCHER_GL_BRIDGE_H
+#endif // GL_BRIDGE_H
