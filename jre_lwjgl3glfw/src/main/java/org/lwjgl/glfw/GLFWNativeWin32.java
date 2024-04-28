@@ -1,29 +1,30 @@
 package org.lwjgl.glfw;
 
+import org.lwjgl.system.JNI;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nullable;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
-public class GLFWNativeWin32 {
-    @Nullable
+public interface GLFWNative {
     @NativeType("char const *")
-    public static String glfwGetWin32Adapter(@NativeType("GLFWmonitor *") long monitor) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
+    String glfwGetWin32Adapter(long monitor);
 
-    @Nullable
     @NativeType("char const *")
-    public static String glfwGetWin32Monitor(@NativeType("GLFWmonitor *") long monitor) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
+    String glfwGetWin32Monitor(long monitor);
 
-    @NativeType("HWND")
-    public static long glfwGetWin32Window(@NativeType("GLFWwindow *") long window) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
+    long glfwGetWin32Window(long window);
 
-    @NativeType("GLFWwindow *")
-    public static long glfwAttachWin32Window(@NativeType("HWND") long handle, @NativeType("GLFWwindow *") long share) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
+    long glfwAttachWin32Window(long handle, long share);
 }
+
+class GLFWNativeWin32 implements GLFWNative {
+    @Override
+    public String glfwGetWin32Adapter(long monitor) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public String glfwGetWin32Monitor(long monitor) {
+        throw new UnsupportedOperationException
