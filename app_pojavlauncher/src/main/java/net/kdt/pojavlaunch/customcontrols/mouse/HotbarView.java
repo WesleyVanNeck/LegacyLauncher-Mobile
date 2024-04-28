@@ -16,9 +16,11 @@ import net.kdt.pojavlaunch.TapDetector;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 import net.kdt.pojavlaunch.utils.MCOptionUtils;
 import net.kdt.pojavlaunch.utils.MathUtils;
-
 import org.lwjgl.glfw.CallbackBridge;
 
+/**
+ * A custom view for handling hotbar interactions.
+ */
 public class HotbarView extends View implements MCOptionUtils.MCOptionListener, View.OnLayoutChangeListener, Runnable {
     private final TapDetector mDoubleTapDetector = new TapDetector(2, TapDetector.DETECTION_METHOD_DOWN);
     private View mParentView;
@@ -53,6 +55,9 @@ public class HotbarView extends View implements MCOptionUtils.MCOptionListener, 
         initialize();
     }
 
+    /**
+     * Initialize the HotbarView.
+     */
     private void initialize() {
         MCOptionUtils.addMCOptionListener(this);
     }
@@ -61,18 +66,19 @@ public class HotbarView extends View implements MCOptionUtils.MCOptionListener, 
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         ViewParent parent = getParent();
-        if(parent == null) return;
-        if(parent instanceof View) {
-            mParentView = (View) parent;
-            mParentView.addOnLayoutChangeListener(this);
-        }
+        if (parent == null || !(parent instanceof View)) return;
+        mParentView = (View) parent;
+        mParentView.addOnLayoutChangeListener(this);
         mGuiScale = MCOptionUtils.getMcScale();
         repositionView();
     }
 
+    /**
+     * Reposition the HotbarView based on the current scale.
+     */
     private void repositionView() {
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
-        if(!(layoutParams instanceof ViewGroup.MarginLayoutParams))
+        if (!(layoutParams instanceof ViewGroup.MarginLayoutParams))
             throw new RuntimeException("Incorrect LayoutParams type, expected ViewGroup.MarginLayoutParams");
         ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams) layoutParams;
         int height;
@@ -83,67 +89,108 @@ public class HotbarView extends View implements MCOptionUtils.MCOptionListener, 
         setLayoutParams(marginLayoutParams);
     }
 
+    /**
+     * Handle touch events for the HotbarView.
+     *
+     * @param event The MotionEvent to handle.
+     * @return True if the event was handled, false otherwise.
+     */
     @SuppressWarnings("ClickableViewAccessibility") // performClick does not report coordinates.
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(!CallbackBridge.isGrabbing()) return false;
+        if (!CallbackBridge.isGrabbing()) return false;
         boolean hasDoubleTapped = mDoubleTapDetector.onTouchEvent(event);
 
         // Check if we need to cancel the drop event
         int actionMasked = event.getActionMasked();
-        if(isLastEventInGesture(actionMasked)) mDropGesture.cancel();
+        if (isLastEventInGesture(actionMasked)) mDropGesture.cancel();
         else mDropGesture.submit();
+
         // Determine the hotbar slot
         float x = event.getX();
-        if(x < 0 || x > mWidth) {
+        if (x < 0 || x > mWidth) {
             // If out of bounds, cancel the hotbar gesture to avoid dropping items on last hotbar slots
             mDropGesture.cancel();
             return true;
         }
-        int hotbarIndex = (int)MathUtils.map(x, 0, mWidth, 0, HOTBAR_KEYS.length);
+        int hotbarIndex = (int) MathUtils.map(x, 0, mWidth, 0, HOTBAR_KEYS.length);
+
         // Check if the slot changed and we need to make a key press
-        if(hotbarIndex == mLastIndex) {
+        if (hotbarIndex == mLastIndex) {
             // Only check for doubletapping if the slot has not changed
-            if(hasDoubleTapped && !LauncherPreferences.PREF_DISABLE_SWAP_HAND) CallbackBridge.sendKeyPress(LwjglGlfwKeycode.GLFW_KEY_F);
+            if (hasDoubleTapped && !LauncherPreferences.PREF_DISABLE_SWAP_HAND) CallbackBridge.sendKeyPress(LwjglGlfwKeycode.GLFW_KEY_F);
             return true;
         }
         mLastIndex = hotbarIndex;
         int hotbarKey = HOTBAR_KEYS[hotbarIndex];
         CallbackBridge.sendKeyPress(hotbarKey);
+
         // Cancel the event since we changed hotbar slots.
         mDropGesture.cancel();
+
         // Only resubmit the gesture only if it isn't the last event we will receive.
-        if(!isLastEventInGesture(actionMasked)) mDropGesture.submit();
+        if (!isLastEventInGesture(actionMasked)) mDropGesture.submit();
         return true;
     }
 
+    /**
+     * Check if the current event is the last event in the gesture.
+     *
+     * @param actionMasked The action mask of the MotionEvent.
+     * @return True if the event is the last event in the gesture, false otherwise.
+     */
     private boolean isLastEventInGesture(int actionMasked) {
         return actionMasked == MotionEvent.ACTION_UP || actionMasked == MotionEvent.ACTION_CANCEL;
     }
 
+    /**
+     * Scale the input value based on the current scale factor.
+     *
+     * @param input The input value to scale.
+     * @return The scaled value.
+     */
     private int mcScale(int input) {
-        return (int)((mGuiScale * input)/ mScaleFactor);
+        return (int) ((mGuiScale * input) / mScaleFactor);
     }
 
+    /**
+     * Handle option changes for the HotbarView.
+     */
     @Override
     public void onOptionChanged() {
         post(this);
     }
 
+    /**
+     * Reposition the HotbarView when the scale changes.
+     */
     @Override
     public void run() {
-        if(getParent() == null) return;
+        if (getParent() == null) return;
         int scale = MCOptionUtils.getMcScale();
-        if(scale == mGuiScale) return;
+        if (scale == mGuiScale) return;
         mGuiScale = scale;
         repositionView();
     }
 
+    /**
+     * Handle layout changes for the HotbarView.
+     *
+     * @param v The view that changed layout.
+     * @param left The new left position of the view.
+     * @param top The new top position of the view.
+     * @param right The new right position of the view.
+     * @param bottom The new bottom position of the view.
+     * @param oldLeft The old left position of the view.
+     * @param oldTop The old top position of the view.
+     * @param oldRight The old right position of the view.
+     * @param oldBottom The old bottom position of the view.
+     */
     @Override
     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
         // We need to check whether dimensions match or not because here we are looking specifically for changes of dimensions
         // and Android keeps calling this without dimensions actually changing for some reason.
-        if(v.equals(mParentView) && (left != oldLeft || right != oldRight || top != oldTop || bottom != oldBottom)) {
+        if (v.equals(mParentView) && (left != oldLeft || right != oldRight || top != oldTop || bottom != oldBottom)) {
             // Need to post this, because it is not correct to resize the view
             // during a layout pass.
             post(this::repositionView);
