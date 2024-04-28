@@ -1,2 +1,5 @@
-open_collective: pojavlauncher
-patreon: pojavlauncher
+organizations:
+  - name: Open Collective
+    project: Pojavlaucher
+  - name: Patreon
+    project: Pojavlaucher
