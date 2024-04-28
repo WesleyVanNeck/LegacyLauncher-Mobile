@@ -1,5 +1,6 @@
 package net.kdt.pojavlaunch.mirrors;
 
+import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -12,6 +13,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 public class DownloadMirror {
     public static final int DOWNLOAD_CLASS_LIBRARIES = 0;
@@ -28,44 +30,41 @@ public class DownloadMirror {
     /**
      * Download a file with the current mirror. If the file is missing on the mirror,
      * fall back to the official source.
+     * @param context The application context
      * @param downloadClass Class of the download. Can either be DOWNLOAD_CLASS_LIBRARIES,
      *                      DOWNLOAD_CLASS_METADATA or DOWNLOAD_CLASS_ASSETS
      * @param urlInput The original (Mojang) URL for the download
      * @param outputFile The output file for the download
-     * @param buffer The shared buffer
-     * @param monitor The download monitor.
+     * @param buffer The shared buffer, or null if not used
+     * @param monitor The download monitor, or null if not used
+     * @return True if the download was successful, false otherwise
      */
-    public static void downloadFileMirrored(int downloadClass, String urlInput, File outputFile,
-                                            @Nullable byte[] buffer, Tools.DownloaderFeedback monitor) throws IOException {
-        try {
-            DownloadUtils.downloadFileMonitored(getMirrorMapping(downloadClass, urlInput),
-                    outputFile, buffer, monitor);
-            return;
-        }catch (FileNotFoundException e) {
-            Log.w("DownloadMirror", "Cannot find the file on the mirror", e);
-            Log.i("DownloadMirror", "Failling back to default source");
+    public static boolean downloadFileMirrored(Context context, int downloadClass, String urlInput, File outputFile,
+                                              @Nullable byte[] buffer, @Nullable Tools.DownloaderFeedback monitor) {
+        if (outputFile.exists() && outputFile.canWrite()) {
+            return true;
         }
-        DownloadUtils.downloadFileMonitored(urlInput, outputFile, buffer, monitor);
+
+        try {
+            return downloadFileMirroredInternal(context, downloadClass, urlInput, outputFile, buffer, monitor);
+        } catch (IOException e) {
+            Log.e("DownloadMirror", "Failed to download file", e);
+            return false;
+        }
     }
 
     /**
      * Download a file with the current mirror. If the file is missing on the mirror,
      * fall back to the official source.
+     * @param context The application context
      * @param downloadClass Class of the download. Can either be DOWNLOAD_CLASS_LIBRARIES,
      *                      DOWNLOAD_CLASS_METADATA or DOWNLOAD_CLASS_ASSETS
      * @param urlInput The original (Mojang) URL for the download
      * @param outputFile The output file for the download
+     * @return True if the download was successful, false otherwise
      */
-    public static void downloadFileMirrored(int downloadClass, String urlInput, File outputFile) throws IOException {
-        try {
-            DownloadUtils.downloadFile(getMirrorMapping(downloadClass, urlInput),
-                    outputFile);
-            return;
-        }catch (FileNotFoundException e) {
-            Log.w("DownloadMirror", "Cannot find the file on the mirror", e);
-            Log.i("DownloadMirror", "Failling back to default source");
-        }
-        DownloadUtils.downloadFile(urlInput, outputFile);
+    public static boolean downloadFileMirrored(Context context, int downloadClass, String urlInput, File outputFile) {
+        return downloadFileMirrored(context, downloadClass, urlInput, outputFile, null, null);
     }
 
     /**
@@ -74,6 +73,26 @@ public class DownloadMirror {
      */
     public static boolean isMirrored() {
         return !LauncherPreferences.PREF_DOWNLOAD_SOURCE.equals("default");
+    }
+
+    private static boolean downloadFileMirroredInternal(Context context, int downloadClass, String urlInput, File outputFile,
+                                                         @Nullable byte[] buffer, @Nullable Tools.DownloaderFeedback monitor) throws IOException {
+        String mirrorUrl = getMirrorMapping(downloadClass, urlInput);
+        if (mirrorUrl == null) {
+            throw new IOException("Invalid mirror URL");
+        }
+
+        if (buffer != null) {
+            DownloadUtils.downloadFileMonitored(mirrorUrl, outputFile, buffer, monitor);
+        } else {
+            DownloadUtils.downloadFileMonitored(mirrorUrl, outputFile, monitor);
+        }
+
+        if (outputFile.exists() && outputFile.length() > 0) {
+            return true;
+        } else {
+            throw new FileNotFoundException("Failed to download file from mirror");
+        }
     }
 
     private static String[] getMirrorSettings() {
@@ -85,34 +104,53 @@ public class DownloadMirror {
         }
     }
 
-    private static String getMirrorMapping(int downloadClass, String mojangUrl) throws MalformedURLException{
+    private static String getMirrorMapping(int downloadClass, String mojangUrl) {
         String[] mirrorSettings = getMirrorSettings();
-        if(mirrorSettings == null) return mojangUrl;
-        int urlTail = getBaseUrlTail(mojangUrl);
-        String baseUrl = mojangUrl.substring(0, urlTail);
-        String path = mojangUrl.substring(urlTail);
-        switch(downloadClass) {
-            case DOWNLOAD_CLASS_ASSETS:
-            case DOWNLOAD_CLASS_METADATA:
-                baseUrl = mirrorSettings[downloadClass];
-                break;
-            case DOWNLOAD_CLASS_LIBRARIES:
-                if(!baseUrl.endsWith("libraries.minecraft.net")) break;
-                baseUrl = mirrorSettings[downloadClass];
-                break;
+        if (mirrorSettings == null) {
+            return mojangUrl;
         }
-        return baseUrl + path;
+
+        try {
+            URL mojangUrlObj = new URL(mojangUrl);
+            int urlTail = getBaseUrlTail(mojangUrlObj);
+            String baseUrl = mojangUrlObj.getProtocol() + ":" + URL_PROTOCOL_TAIL + mojangUrlObj.getHost();
+            String path = mojangUrl.substring(urlTail);
+
+            switch (downloadClass) {
+                case DOWNLOAD_CLASS_ASSETS:
+                case DOWNLOAD_CLASS_METADATA:
+                    baseUrl = mirrorSettings[downloadClass];
+                    break;
+                case DOWNLOAD_CLASS_LIBRARIES:
+                    if (!baseUrl.endsWith("libraries.minecraft.net")) {
+                        break;
+                    }
+                    baseUrl = mirrorSettings[downloadClass];
+                    break;
+                default:
+                    break;
+            }
+
+            return baseUrl + path;
+        } catch (MalformedURLException e) {
+            Log.e("DownloadMirror", "Failed to parse URL", e);
+            return null;
+        }
     }
 
-    private static int getBaseUrlTail(String wholeUrl) throws MalformedURLException{
-        int protocolNameEnd = wholeUrl.indexOf(URL_PROTOCOL_TAIL);
-        if(protocolNameEnd == -1)
+    private static int getBaseUrlTail(URL url) {
+        int protocolNameEnd = url.toString().indexOf(URL_PROTOCOL_TAIL);
+        if (protocolNameEnd == -1) {
             throw new MalformedURLException("No protocol, or non path-based URL");
+        }
         protocolNameEnd += URL_PROTOCOL_TAIL.length();
-        int hostnameEnd = wholeUrl.indexOf('/', protocolNameEnd);
-        if(protocolNameEnd >= wholeUrl.length() || hostnameEnd == protocolNameEnd)
+        int hostnameEnd = url.toString().indexOf('/', protocolNameEnd);
+        if (protocolNameEnd >= url.toString().length() || hostnameEnd == protocolNameEnd) {
             throw new MalformedURLException("No hostname");
-        if(hostnameEnd == -1) hostnameEnd = wholeUrl.length();
+        }
+        if (hostnameEnd == -1) {
+            hostnameEnd = url.toString().length();
+        }
         return hostnameEnd;
     }
 }
