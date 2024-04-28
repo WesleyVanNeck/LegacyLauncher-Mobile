@@ -1,86 +1,120 @@
 package net.kdt.pojavlaunch.modloaders.modpacks.imagecache;
 
-import android.util.Log;
-
-import net.kdt.pojavlaunch.PojavApplication;
-
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * This image is intended to keep the mod icon cache tidy (aka under 100 megabytes)
- */
-public class IconCacheJanitor implements Runnable{
-    public static final long CACHE_SIZE_LIMIT = 104857600; // The cache size limit, 100 megabytes
-    public static final long CACHE_BRINGDOWN = 52428800; // The size to which the cache should be brought
-    // in case of an overflow, 50 mb
-    private static Future<?> sJanitorFuture;
-    private static boolean sJanitorRan = false;
+public class IconCacheJanitor implements Runnable {
+
+    // Constants
+    private static final long CACHE_SIZE_LIMIT = 100 * 1024 * 1024; // 100 MB
+    private static final long CACHE_BRINGDOWN = 50 * 1024 * 1024; // 50 MB
+    private static final int MIN_FILES_TO_CLEAN = 10; // Minimum number of files to clean up
+
+    // Singleton instance
+    private static IconCacheJanitor instance;
+
+    // Private constructor
     private IconCacheJanitor() {
-        // don't allow others to create this
     }
+
+    // Get the singleton instance
+    public static IconCacheJanitor getInstance() {
+        if (instance == null) {
+            instance = new IconCacheJanitor();
+        }
+        return instance;
+    }
+
     @Override
     public void run() {
-        File modIconCachePath = ModIconCache.getImageCachePath();
-        if(!modIconCachePath.isDirectory() || !modIconCachePath.canRead()) return;
-        File[] modIconFiles = modIconCachePath.listFiles();
-        if(modIconFiles == null) return;
-        ArrayList<File> writableModIconFiles = new ArrayList<>(modIconFiles.length);
-        long directoryFileSize = 0;
-        for(File modIconFile : modIconFiles) {
-            if(!modIconFile.isFile() || !modIconFile.canRead()) continue;
-            directoryFileSize += modIconFile.length();
-            if(!modIconFile.canWrite()) continue;
-            writableModIconFiles.add(modIconFile);
-        }
-        if(directoryFileSize < CACHE_SIZE_LIMIT)  {
-            Log.i("IconCacheJanitor", "Skipping cleanup because there's not enough to clean up");
+        Path modIconCachePath = ModIconCache.getImageCachePath();
+        if (!Files.isDirectory(modIconCachePath) || !Files.isReadable(modIconCachePath)) {
             return;
         }
-        Arrays.sort(modIconFiles,
-                (x,y)-> Long.compare(y.lastModified(), x.lastModified())
-        );
+
+        List<Path> modIconFiles = new ArrayList<>();
+        AtomicLong directoryFileSize = new AtomicLong(0);
+
+        try {
+            Files.list(modIconCachePath).forEach(path -> {
+                if (!Files.isRegularFile(path) || !Files.isReadable(path) || !Files.isWritable(path)) {
+                    return;
+                }
+                directoryFileSize.addAndGet(Files.size(path));
+                modIconFiles.add(path);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        if (directoryFileSize.get() < CACHE_SIZE_LIMIT) {
+            System.out.println("Skipping cleanup because there's not enough to clean up");
+            return;
+        }
+
+        modIconFiles.sort((x, y) -> {
+            try {
+                return Files.getLastModifiedTime(y).compareTo(Files.getLastModifiedTime(x));
+            } catch (IOException e) {
+                e.printStackTrace();
+                return 0;
+            }
+        });
+
         int filesCleanedUp = 0;
-        for(File modFile : writableModIconFiles) {
-            if(directoryFileSize < CACHE_BRINGDOWN) break;
-            long modFileSize = modFile.length();
-            if(modFile.delete()) {
-                directoryFileSize -= modFileSize;
-                filesCleanedUp++;
+        for (Path modFile : modIconFiles) {
+            if (directoryFileSize.get() < CACHE_BRINGDOWN) {
+                break;
+            }
+            try {
+                if (Files.deleteIfExists(modFile)) {
+                    directoryFileSize.addAndGet(-Files.size(modFile));
+                    filesCleanedUp++;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-        Log.i("IconCacheJanitor", "Cleaned up "+filesCleanedUp+ " files");
-        synchronized (IconCacheJanitor.class) {
-            sJanitorFuture = null;
-            sJanitorRan = true;
-        }
+
+        System.out.println("Cleaned up " + filesCleanedUp + " files");
     }
 
     /**
      * Runs the janitor task, unless there was one running already or one has ran already
      */
-    public static void runJanitor() {
-        synchronized (IconCacheJanitor.class) {
-            if (sJanitorFuture != null || sJanitorRan) return;
-            sJanitorFuture = PojavApplication.sExecutorService.submit(new IconCacheJanitor());
+    public void runJanitor() {
+        if (sJanitorFuture != null || sJanitorRan) {
+            return;
         }
+
+        sJanitorFuture = PojavApplication.sExecutorService.submit(() -> {
+            getInstance().run();
+            sJanitorFuture = null;
+            sJanitorRan = true;
+        });
     }
 
     /**
      * Waits for the janitor task to finish, if there is one running already
      * Note that the thread waiting must not be interrupted.
      */
-    public static void waitForJanitorToFinish() {
-        synchronized (IconCacheJanitor.class) {
-            if (sJanitorFuture == null) return;
-            try {
-                sJanitorFuture.get();
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException("Should not happen!", e);
-            }
+    public void waitForJanitorToFinish() {
+        if (sJanitorFuture == null) {
+            return;
+        }
+
+        try {
+            sJanitorFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Should not happen!", e);
         }
     }
 }
