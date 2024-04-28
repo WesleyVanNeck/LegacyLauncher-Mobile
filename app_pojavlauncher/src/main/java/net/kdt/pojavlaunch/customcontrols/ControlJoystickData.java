@@ -1,22 +1,33 @@
 package net.kdt.pojavlaunch.customcontrols;
 
+/**
+ * ControlJoystickData class representing joystick data for custom controls.
+ */
 public class ControlJoystickData extends ControlData {
 
-    /* Whether the joystick can stay forward */
-    public boolean forwardLock = false;
-    /*
-     * Whether the finger tracking is absolute (joystick jumps to where you touched)
-     * or relative (joystick stays in the center)
+    // Whether the joystick can stay forward
+    private boolean forwardLock;
+    // Whether the finger tracking is absolute or relative
+    private boolean absolute;
+
+    /**
+     * Constructs a new ControlJoystickData instance with default values.
      */
-    public boolean absolute = false;
+    public ControlJoystickData() {
+        this(false, false);
+    }
 
-    public ControlJoystickData(){
+    /**
+     * Constructs a new ControlJoystickData instance with the given properties.
+     *
+     * @param forwardLock  Whether the joystick can stay forward
+     * @param isAbsolute   Whether the finger tracking is absolute
+     */
+    public ControlJoystickData(boolean forwardLock, boolean isAbsolute) {
         super();
+        this.forwardLock = forwardLock;
+        this.absolute = isAbsolute;
     }
 
-    public ControlJoystickData(ControlJoystickData properties) {
-        super(properties);
-        forwardLock = properties.forwardLock;
-        absolute = properties.absolute;
-    }
-}
+    /**
+
