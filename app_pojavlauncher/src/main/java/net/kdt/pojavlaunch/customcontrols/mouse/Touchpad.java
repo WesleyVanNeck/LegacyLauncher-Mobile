@@ -20,17 +20,14 @@ import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 
 import org.lwjgl.glfw.CallbackBridge;
 
-/**
- * Class dealing with the virtual mouse
- */
 public class Touchpad extends View implements GrabListener, AbstractTouchpad {
-    /* Whether the Touchpad should be displayed */
+
+    private static final float SCALE_FACTOR = DEFAULT_PREF.getInt("resolutionRatio", 100) / 100f;
+
     private boolean mDisplayState;
-    /* Mouse pointer icon used by the touchpad */
     private Drawable mMousePointerDrawable;
     private float mMouseX, mMouseY;
-    /* Resolution scaler option, allow downsizing a window */
-    private final float mScaleFactor = DEFAULT_PREF.getInt("resolutionRatio",100)/100f;
+
     public Touchpad(@NonNull Context context) {
         this(context, null);
     }
@@ -40,22 +37,47 @@ public class Touchpad extends View implements GrabListener, AbstractTouchpad {
         init();
     }
 
-    /** Enable the touchpad */
-    public void enable(){
+    private void init() {
+        mMousePointerDrawable = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_mouse_pointer, getContext().getTheme());
+        assert mMousePointerDrawable != null;
+        mMousePointerDrawable.setBounds(
+                0, 0,
+                (int) (36 / 100f * LauncherPreferences.PREF_MOUSESCALE),
+                (int) (54 / 100f * LauncherPreferences.PREF_MOUSESCALE)
+        );
+        setFocusable(false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            setDefaultFocusHighlightEnabled(false);
+        }
+
+        disable();
+        mDisplayState = false;
+
+        setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                CallbackBridge.setGrabbing(true);
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                CallbackBridge.setGrabbing(false);
+            }
+            return true;
+        });
+    }
+
+    public void enable() {
         setVisibility(VISIBLE);
         placeMouseAt(currentDisplayMetrics.widthPixels / 2f, currentDisplayMetrics.heightPixels / 2f);
     }
 
-    /** Disable the touchpad and hides the mouse */
-    public void disable(){
+    public void disable() {
         setVisibility(GONE);
+        mMouseX = 0;
+        mMouseY = 0;
     }
 
-    /** @return The new state, enabled or disabled */
-    public boolean switchState(){
+    public boolean switchState() {
         mDisplayState = !mDisplayState;
-        if(!CallbackBridge.isGrabbing()) {
-            if(mDisplayState) enable();
+        if (!CallbackBridge.isGrabbing()) {
+            if (mDisplayState) enable();
             else disable();
         }
         return mDisplayState;
@@ -68,14 +90,11 @@ public class Touchpad extends View implements GrabListener, AbstractTouchpad {
     }
 
     private void sendMousePosition() {
-        CallbackBridge.sendCursorPos((mMouseX * mScaleFactor), (mMouseY * mScaleFactor));
+        CallbackBridge.sendCursorPos((mMouseX * SCALE_FACTOR), (mMouseY * SCALE_FACTOR));
     }
 
     private void updateMousePosition() {
         sendMousePosition();
-        // I wanted to implement a dirty rect for this, but it is ignored since API level 21
-        // (which is our min API)
-        // Let's hope the "internally calculated area" is good enough.
         invalidate();
     }
 
@@ -85,37 +104,17 @@ public class Touchpad extends View implements GrabListener, AbstractTouchpad {
         mMousePointerDrawable.draw(canvas);
     }
 
-    private void init(){
-        // Setup mouse pointer
-        mMousePointerDrawable = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_mouse_pointer, getContext().getTheme());
-        // For some reason it's annotated as Nullable even though it doesn't seem to actually
-        // ever return null
-        assert mMousePointerDrawable != null;
-        mMousePointerDrawable.setBounds(
-                0, 0,
-                (int) (36 / 100f * LauncherPreferences.PREF_MOUSESCALE),
-                (int) (54 / 100f * LauncherPreferences.PREF_MOUSESCALE)
-        );
-        setFocusable(false);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            setDefaultFocusHighlightEnabled(false);
-        }
-
-        // When the game is grabbing, we should not display the mouse
-        disable();
-        mDisplayState = false;
-    }
-
     @Override
     public void onGrabState(boolean isGrabbing) {
-        post(()->updateGrabState(isGrabbing));
+        updateGrabState(isGrabbing);
     }
+
     private void updateGrabState(boolean isGrabbing) {
-        if(!isGrabbing) {
-            if(mDisplayState && getVisibility() != VISIBLE) enable();
-            if(!mDisplayState && getVisibility() == VISIBLE) disable();
-        }else{
-            if(getVisibility() != View.GONE) disable();
+        if (!isGrabbing) {
+            if (mDisplayState && getVisibility() != VISIBLE) enable();
+            if (!mDisplayState && getVisibility() == VISIBLE) disable();
+        } else {
+            if (getVisibility() != View.GONE) disable();
         }
     }
 
