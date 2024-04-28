@@ -6,19 +6,22 @@ import android.os.Handler;
  * This class implements an abstract "validator gesture", meant as a base for implementation of
  * more complex gestures with finger position tracking and such.
  */
-public abstract class ValidatorGesture implements Runnable{
-    private final Handler mHandler;
-    private boolean mGestureActive;
-    private final int mRequiredDuration;
+public abstract class ValidatorGesture implements Runnable {
+    private final Handler handler;
+    private boolean gestureActive;
+    private final int requiredDuration;
 
     /**
-     * @param mHandler the Handler that will be used for calling back the checkAndTrigger() method.
-     *                 This Handler should run on the same thread as the callee of submit()/cancel()
-     * @param mRequiredDuration the duration after which the class will call checkAndTrigger().
+     * @param handler the Handler that will be used for calling back the checkAndTrigger() method.
+     *                This Handler should run on the same thread as the callee of submit()/cancel()
+     * @param requiredDuration the duration after which the class will call checkAndTrigger().
      */
-    public ValidatorGesture(Handler mHandler, int mRequiredDuration) {
-        this.mHandler = mHandler;
-        this.mRequiredDuration = mRequiredDuration;
+    public ValidatorGesture(Handler handler, int requiredDuration) {
+        if (handler == null) {
+            throw new IllegalArgumentException("Handler cannot be null");
+        }
+        this.handler = handler;
+        this.requiredDuration = requiredDuration;
     }
 
     /**
@@ -27,9 +30,11 @@ public abstract class ValidatorGesture implements Runnable{
      * @return true if the gesture was submitted, false if the call was ignored
      */
     public final boolean submit() {
-        if(mGestureActive) return false;
-        mHandler.postDelayed(this, mRequiredDuration);
-        mGestureActive = true;
+        if (gestureActive) {
+            return false;
+        }
+        handler.postDelayed(this, requiredDuration);
+        gestureActive = true;
         return true;
     }
 
@@ -41,21 +46,24 @@ public abstract class ValidatorGesture implements Runnable{
      *                    Note that returning false from checkAndTrigger() counts as user interaction.
      */
     public final void cancel(boolean isSwitching) {
-        if(!mGestureActive) return;
-        mHandler.removeCallbacks(this);
+        if (!gestureActive) {
+            return;
+        }
+        handler.removeCallbacks(this);
         onGestureCancelled(isSwitching);
-        mGestureActive = false;
+        gestureActive = false;
     }
 
     @Override
     public final void run() {
-        if(checkAndTrigger()) return;
-        mGestureActive = false;
-        onGestureCancelled(false);
+        if (!checkAndTrigger()) {
+            gestureActive = false;
+            onGestureCancelled(false);
+        }
     }
 
     /**
-     * This method will be called after mRequiredDuration milliseconds, if the gesture was not cancelled.
+     * This method will be called after requiredDuration milliseconds, if the gesture was not cancelled.
      * @return false if you want to mark this gesture as "inactive"
      *         true otherwise
      */
