@@ -1,1 +1,6 @@
-20230712
+# This is a comment
+# A date can be stored in a variable
+todays_date = "2023-07-12"
+
+# The date can be printed using the `print` function
+print("Today's date is:", todays_date)
