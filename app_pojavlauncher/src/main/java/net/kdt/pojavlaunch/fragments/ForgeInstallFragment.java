@@ -2,10 +2,13 @@ package net.kdt.pojavlaunch.fragments;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.widget.ExpandableListAdapter;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 import net.kdt.pojavlaunch.JavaGUILauncherActivity;
 import net.kdt.pojavlaunch.R;
@@ -26,6 +29,7 @@ public class ForgeInstallFragment extends ModVersionListFragment<List<String>> {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
+        sTaskProxy = requireArguments().getParcelable("taskProxy");
     }
 
     @Override
@@ -42,6 +46,7 @@ public class ForgeInstallFragment extends ModVersionListFragment<List<String>> {
     public ModloaderListenerProxy getTaskProxy() {
         return sTaskProxy;
     }
+
     @Override
     public void setTaskProxy(ModloaderListenerProxy proxy) {
         sTaskProxy = proxy;
@@ -67,5 +72,46 @@ public class ForgeInstallFragment extends ModVersionListFragment<List<String>> {
         Intent modInstallerStartIntent = new Intent(context, JavaGUILauncherActivity.class);
         ForgeUtils.addAutoInstallArgs(modInstallerStartIntent, downloadedFile, true);
         context.startActivity(modInstallerStartIntent);
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
+    }
+
+    @Override
+    public void onVersionSelected(int position, List<String> versionList) {
+        super.onVersionSelected(position, versionList);
+        if (sTaskProxy != null) {
+            sTaskProxy.onVersionSelected(position, versionList);
+        }
+    }
+
+    @NonNull
+    @Override
+    public Fragment argumentNotNull() {
+        Fragment fragment = super.argumentNotNull();
+        if (fragment instanceof ForgeInstallFragment) {
+            ForgeInstallFragment f = (ForgeInstallFragment) fragment;
+            f.sTaskProxy = requireNonNull(f.sTaskProxy);
+            f.setTaskProxy(f.sTaskProxy);
+        }
+        return fragment;
+    }
+
+    @Override
+    public LayoutInflater requireLayoutInflater() {
+        return super.requireLayoutInflater();
+    }
+
+    @Override
+    public Context requireContext() {
+        return super.requireContext();
+    }
+
+    @Override
+    public Activity requireActivity() {
+        return super.requireActivity();
     }
 }
