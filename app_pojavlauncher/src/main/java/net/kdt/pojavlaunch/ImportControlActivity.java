@@ -1,17 +1,19 @@
 package net.kdt.pojavlaunch;
 
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
 import net.kdt.pojavlaunch.utils.FileUtils;
+import net.kdt.pojavlaunch.utils.Tools;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
@@ -22,6 +24,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * An activity dedicated to importing control files.
@@ -35,7 +39,6 @@ public class ImportControlActivity extends Activity {
 
     private EditText mEditText;
 
-    
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -110,8 +113,17 @@ public class ImportControlActivity extends Activity {
             return;
         }
 
-        new File(Tools.CTRLMAP_PATH + "/TMP_IMPORT_FILE.json").renameTo(new File(Tools.CTRLMAP_PATH + "/" + fileName + ".json"));
-        Toast.makeText(getApplicationContext(), getText(R.string.import_control_done), Toast.LENGTH_SHORT).show();
+        File importFile = new File(Tools.CTRLMAP_PATH + "/TMP_IMPORT_FILE.json");
+        File destFile = new File(Tools.CTRLMAP_PATH + "/" + fileName + ".json");
+        if (importFile.exists() && importFile.isFile()) {
+            try {
+                Files.copy(importFile.toPath(), destFile.toPath());
+                Toast.makeText(getApplicationContext(), getText(R.string.import_control_done), Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(getApplicationContext(), getText(R.string.import_control_error), Toast.LENGTH_SHORT).show();
+            }
+        }
         finishAndRemoveTask();
     }
 
@@ -122,11 +134,10 @@ public class ImportControlActivity extends Activity {
         InputStream is;
         try {
             is = getContentResolver().openInputStream(mUriData);
-            OutputStream os = new FileOutputStream(Tools.CTRLMAP_PATH + "/" + "TMP_IMPORT_FILE" + ".json");
-            IOUtils.copy(is, os);
-
-            os.close();
-            is.close();
+            File destFile = new File(Tools.CTRLMAP_PATH + "/TMP_IMPORT_FILE.json");
+            try (OutputStream os = new FileOutputStream(destFile)) {
+                IOUtils.copy(is, os);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -140,8 +151,9 @@ public class ImportControlActivity extends Activity {
     private static boolean isFileNameValid(String fileName){
         fileName = trimFileName(fileName);
 
-        if(fileName.isEmpty()) return false;
-        return !FileUtils.exists(Tools.CTRLMAP_PATH + "/" + fileName + ".json");
+        if(TextUtils.isEmpty(fileName)) return false;
+        File file = new File(Tools.CTRLMAP_PATH + "/" + fileName + ".json");
+        return !file.exists() || !file.isFile();
     }
 
     /**
@@ -150,12 +162,13 @@ public class ImportControlActivity extends Activity {
      * @return The trimmed string
      */
     private static String trimFileName(String fileName){
-        return fileName
-                .replace(".json", "")
-                .replaceAll("%..", "/")
-                .replace("/", "")
-                .replace("\\", "")
-                .trim();
+        StringBuilder sb = new StringBuilder(fileName);
+        sb.replace(".json", "");
+        sb.replaceAll("%..", "/");
+        sb.replace("/", "");
+        sb.replace("\\", "");
+        sb.trim();
+        return sb.toString();
     }
 
     /**
@@ -165,7 +178,10 @@ public class ImportControlActivity extends Activity {
         mUriData = getIntent().getData();
         if(mUriData != null) return;
         try {
-            mUriData = getIntent().getClipData().getItemAt(0).getUri();
+            ClipData clipData = getIntent().getClipData();
+            if (clipData != null && clipData.getItemCount() > 0) {
+                mUriData = clipData.getItemAt(0).getUri();
+            }
         }catch (Exception ignored){}
     }
 
