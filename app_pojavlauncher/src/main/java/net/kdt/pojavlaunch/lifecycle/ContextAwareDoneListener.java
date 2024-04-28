@@ -16,6 +16,7 @@ import net.kdt.pojavlaunch.tasks.AsyncMinecraftDownloader;
 import net.kdt.pojavlaunch.utils.NotificationUtils;
 
 public class ContextAwareDoneListener implements AsyncMinecraftDownloader.DoneListener, ContextExecutorTask {
+
     private final String mErrorString;
     private final String mNormalizedVersionid;
 
@@ -25,6 +26,10 @@ public class ContextAwareDoneListener implements AsyncMinecraftDownloader.DoneLi
     }
 
     private Intent createGameStartIntent(Context context) {
+        if (context == null) {
+            return null;
+        }
+
         Intent mainIntent = new Intent(context, MainActivity.class);
         mainIntent.putExtra(INTENT_MINECRAFT_VERSION, mNormalizedVersionid);
         mainIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -33,7 +38,7 @@ public class ContextAwareDoneListener implements AsyncMinecraftDownloader.DoneLi
 
     @Override
     public void onDownloadDone() {
-        ProgressKeeper.waitUntilDone(()->ContextExecutor.execute(this));
+        ProgressKeeper.waitUntilDone(() -> ContextExecutor.execute(this));
     }
 
     @Override
@@ -43,11 +48,17 @@ public class ContextAwareDoneListener implements AsyncMinecraftDownloader.DoneLi
 
     @Override
     public void executeWithActivity(Activity activity) {
+        if (activity == null) {
+            return;
+        }
+
+        Intent gameStartIntent = createGameStartIntent(activity);
+        if (gameStartIntent == null) {
+            return;
+        }
+
         try {
-            Intent gameStartIntent = createGameStartIntent(activity);
             activity.startActivity(gameStartIntent);
-            activity.finish();
-            android.os.Process.killProcess(android.os.Process.myPid()); //You should kill yourself, NOW!
         } catch (Throwable e) {
             Tools.showError(activity.getBaseContext(), e);
         }
@@ -55,11 +66,15 @@ public class ContextAwareDoneListener implements AsyncMinecraftDownloader.DoneLi
 
     @Override
     public void executeWithApplication(Context context) {
+        if (context == null) {
+            return;
+        }
+
         Intent gameStartIntent = createGameStartIntent(context);
-        // Since the game is a separate process anyway, it does not matter if it gets invoked
-        // from somewhere other than the launcher activity.
-        // The only problem may arise if the launcher starts doing something when the user starts the notification.
-        // So, the notification is automatically removed once there are tasks ongoing in the ProgressKeeper
+        if (gameStartIntent == null) {
+            return;
+        }
+
         NotificationUtils.sendBasicNotification(context,
                 R.string.notif_download_finished,
                 R.string.notif_download_finished_desc,
@@ -67,7 +82,5 @@ public class ContextAwareDoneListener implements AsyncMinecraftDownloader.DoneLi
                 NotificationUtils.PENDINGINTENT_CODE_GAME_START,
                 NotificationUtils.NOTIFICATION_ID_GAME_START
         );
-        // You should keep yourself safe, NOW!
-        // otherwise android does weird things...
     }
 }
