@@ -1,6 +1,7 @@
 package net.kdt.pojavlaunch.modloaders;
 
 import net.kdt.pojavlaunch.utils.DownloadUtils;
+import net.kdt.pojavlaunch.utils.OptiFineUtils;
 
 import org.htmlcleaner.HtmlCleaner;
 import org.htmlcleaner.TagNode;
@@ -8,69 +9,69 @@ import org.htmlcleaner.TagNode;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A class that scrapes the OptiFine website for available versions and returns them as an {@link OptiFineUtils.OptiFineVersions} object.
+ */
 public class OptiFineScraper implements DownloadUtils.ParseCallback<OptiFineUtils.OptiFineVersions> {
-    private final OptiFineUtils.OptiFineVersions mOptiFineVersions;
-    private List<OptiFineUtils.OptiFineVersion> mListInProgress;
-    private String mMinecraftVersion;
 
-    public OptiFineScraper() {
-        mOptiFineVersions = new OptiFineUtils.OptiFineVersions();
-        mOptiFineVersions.minecraftVersions = new ArrayList<>();
-        mOptiFineVersions.optifineVersions = new ArrayList<>();
-    }
+    private final OptiFineUtils.OptiFineVersions versions = new OptiFineUtils.OptiFineVersions();
+    private List<OptiFineUtils.OptiFineVersion> currentVersionList;
+    private String currentMinecraftVersion;
 
     @Override
     public OptiFineUtils.OptiFineVersions process(String input) throws DownloadUtils.ParseException {
         HtmlCleaner htmlCleaner = new HtmlCleaner();
-        TagNode tagNode = htmlCleaner.clean(input);
-        traverseTagNode(tagNode);
+        TagNode rootNode = htmlCleaner.clean(input);
+        traverseTagNode(rootNode);
         insertVersionContent(null);
-        if(mOptiFineVersions.optifineVersions.size() < 1 ||
-            mOptiFineVersions.minecraftVersions.size() < 1) throw new DownloadUtils.ParseException(null);
-        return mOptiFineVersions;
+        if (versions.optifineVersions.size() < 1 || versions.minecraftVersions.size() < 1) {
+            throw new DownloadUtils.ParseException(null);
+        }
+        return versions;
     }
 
-    public void traverseTagNode(TagNode tagNode) {
-        if(isDownloadLine(tagNode) && mMinecraftVersion != null) {
+    private void traverseTagNode(TagNode tagNode) {
+        if (isDownloadLine(tagNode) && currentMinecraftVersion != null) {
             traverseDownloadLine(tagNode);
-        } else if(isMinecraftVersionTag(tagNode)) {
-           insertVersionContent(tagNode);
+        } else if (isMinecraftVersionTag(tagNode)) {
+            insertVersionContent(tagNode);
         } else {
-            for(TagNode tagNodes : tagNode.getChildTags()) {
-                traverseTagNode(tagNodes);
+            for (TagNode childNode : tagNode.getChildTags()) {
+                traverseTagNode(childNode);
             }
         }
     }
 
     private boolean isDownloadLine(TagNode tagNode) {
-        return tagNode.getName().equals("tr") &&
+        return "tr".equals(tagNode.getName()) &&
                 tagNode.hasAttribute("class") &&
                 tagNode.getAttributeByName("class").startsWith("downloadLine");
     }
 
     private boolean isMinecraftVersionTag(TagNode tagNode) {
-        return tagNode.getName().equals("h2") &&
+        return "h2".equals(tagNode.getName()) &&
                 tagNode.getText().toString().startsWith("Minecraft ");
     }
 
     private void traverseDownloadLine(TagNode tagNode) {
         OptiFineUtils.OptiFineVersion optiFineVersion = new OptiFineUtils.OptiFineVersion();
-        optiFineVersion.minecraftVersion = mMinecraftVersion;
-        for(TagNode subNode : tagNode.getChildTags()) {
-            if(!subNode.getName().equals("td")) continue;
-            switch(subNode.getAttributeByName("class")) {
+        optiFineVersion.setMinecraftVersion(currentMinecraftVersion);
+        for (TagNode subNode : tagNode.getChildTags()) {
+            if (!"td".equals(subNode.getName())) continue;
+            switch (subNode.getAttributeByName("class")) {
                 case "colFile":
-                    optiFineVersion.versionName = subNode.getText().toString();
+                    optiFineVersion.setVersionName(subNode.getText().toString());
                     break;
                 case "colMirror":
-                    optiFineVersion.downloadUrl = getLinkHref(subNode);
+                    optiFineVersion.setDownloadUrl(getLinkHref(subNode));
             }
         }
-        mListInProgress.add(optiFineVersion);
+        currentVersionList.add(optiFineVersion);
     }
+
     private String getLinkHref(TagNode parent) {
-        for(TagNode subNode : parent.getChildTags()) {
-            if(subNode.getName().equals("a") && subNode.hasAttribute("href")) {
+        for (TagNode subNode : parent.getChildTags()) {
+            if ("a".equals(subNode.getName()) && subNode.hasAttribute("href")) {
                 return subNode.getAttributeByName("href").replace("http://", "https://");
             }
         }
@@ -78,13 +79,13 @@ public class OptiFineScraper implements DownloadUtils.ParseCallback<OptiFineUtil
     }
 
     private void insertVersionContent(TagNode tagNode) {
-        if(mListInProgress != null && mMinecraftVersion != null) {
-            mOptiFineVersions.minecraftVersions.add(mMinecraftVersion);
-            mOptiFineVersions.optifineVersions.add(mListInProgress);
+        if (currentVersionList != null && currentMinecraftVersion != null) {
+            versions.minecraftVersions.add(currentMinecraftVersion);
+            versions.optifineVersions.add(currentVersionList);
         }
-        if(tagNode != null) {
-            mMinecraftVersion = tagNode.getText().toString();
-            mListInProgress = new ArrayList<>();
+        if (tagNode != null) {
+            currentMinecraftVersion = tagNode.getText().toString();
+            currentVersionList = new ArrayList<>();
         }
     }
 }
