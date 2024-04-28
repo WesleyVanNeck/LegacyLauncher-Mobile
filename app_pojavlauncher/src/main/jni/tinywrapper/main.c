@@ -1,6 +1,7 @@
-//#import <Foundation/Foundation.h>
 #include <stdio.h>
 #include <dlfcn.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "GL/gl.h"
 #include "GLES3/gl32.h"
@@ -9,8 +10,13 @@
 #define LOOKUP_FUNC(func) \
     if (!gles_##func) { \
         gles_##func = dlsym(RTLD_NEXT, #func); \
-    } if (!gles_##func) { \
-        gles_##func = dlsym(RTLD_DEFAULT, #func); \
+        if (!gles_##func) { \
+            gles_##func = dlsym(RTLD_DEFAULT, #func); \
+            if (!gles_##func) { \
+                fprintf(stderr, "Error: Unable to find symbol %s\n", #func); \
+                exit(1); \
+            } \
+        } \
     }
 
 int proxy_width, proxy_height, proxy_intformat, maxTextureSize;
@@ -45,12 +51,12 @@ void *glMapBuffer(GLenum target, GLenum access) {
 
         // GL 4.4
         case GL_QUERY_BUFFER:
-            printf("ERROR: glMapBuffer unsupported target=0x%x", target);
+            fprintf(stderr, "ERROR: glMapBuffer unsupported target=0x%x\n", target);
             break; // not supported for now
 
 	     case GL_DRAW_INDIRECT_BUFFER:
         case GL_TEXTURE_BUFFER:
-            printf("ERROR: glMapBuffer unimplemented target=0x%x", target);
+            fprintf(stderr, "ERROR: glMapBuffer unimplemented target=0x%x\n", target);
             break;
     }
 
@@ -127,7 +133,7 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar * const *string, 
 #ifdef __APPLE__
     // patch OptiFine 1.17.x
     if (FindString(converted, "\nuniform mat4 textureMatrix = mat4(1.0);")) {
-        InplaceReplace(converted, &convertedLen, "\nuniform mat4 textureMatrix = mat4(1.0);", "\n#define textureMatrix mat4(1.0)");
+        InplaceReplace(&converted, &convertedLen, "\nuniform mat4 textureMatrix = mat4(1.0);", "\n#define textureMatrix mat4(1.0)");
     }
 #endif
 
@@ -155,7 +161,7 @@ int isProxyTexture(GLenum target) {
     return 0;
 }
 
-static int inline nlevel(int size, int level) {
+static inline int nlevel(int size, int level) {
     if(size) {
         size>>=level;
         if(!size) size=1;
