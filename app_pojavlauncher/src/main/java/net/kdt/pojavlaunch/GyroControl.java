@@ -17,6 +17,7 @@ import org.lwjgl.glfw.CallbackBridge;
 import java.util.Arrays;
 
 public class GyroControl implements SensorEventListener, GrabListener {
+
     /* How much distance has to be moved before taking into account the gyro */
     private static final float SINGLE_AXIS_LOW_PASS_THRESHOLD = 1.13F;
     private static final float MULTI_AXIS_LOW_PASS_THRESHOLD = 1.3F;
@@ -35,7 +36,6 @@ public class GyroControl implements SensorEventListener, GrabListener {
     private final float[] mPreviousRotation = new float[16];
     private final float[] mCurrentRotation = new float[16];
     private final float[] mAngleDifference = new float[3];
-
 
     /* Used to average the last values, if smoothing is enabled */
     private final float[][] mAngleBuffer = new float[
@@ -81,46 +81,48 @@ public class GyroControl implements SensorEventListener, GrabListener {
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if (!mShouldHandleEvents) return;
+
         // Copy the old array content
         System.arraycopy(mCurrentRotation, 0, mPreviousRotation, 0, 16);
         SensorManager.getRotationMatrixFromVector(mCurrentRotation, sensorEvent.values);
-
 
         if(mFirstPass){  // Setup initial position
             mFirstPass = false;
             return;
         }
+
         SensorManager.getAngleChange(mAngleDifference, mCurrentRotation, mPreviousRotation);
         damperValue(mAngleDifference);
+
+        // Store the gyro movement under the threshold
         mStoredX += xAverage * 1000 * LauncherPreferences.PREF_GYRO_SENSITIVITY;
         mStoredY += yAverage * 1000 * LauncherPreferences.PREF_GYRO_SENSITIVITY;
 
-        boolean updatePosition = false;
+        // Calculate the absolute values of the stored X and Y
         float absX = Math.abs(mStoredX);
         float absY = Math.abs(mStoredY);
 
+        // Check if the absolute values of X and Y are greater than the threshold
         if(absX + absY > MULTI_AXIS_LOW_PASS_THRESHOLD) {
             CallbackBridge.mouseX -= ((mSwapXY ? mStoredY : mStoredX) * xFactor);
             CallbackBridge.mouseY += ((mSwapXY ? mStoredX : mStoredY) * yFactor);
             mStoredX = 0;
             mStoredY = 0;
-            updatePosition = true;
+            CallbackBridge.sendCursorPos(CallbackBridge.mouseX, CallbackBridge.mouseY);
         } else {
-            if(Math.abs(mStoredX) > SINGLE_AXIS_LOW_PASS_THRESHOLD){
+            // Check if the absolute value of X is greater than the threshold
+            if(absX > SINGLE_AXIS_LOW_PASS_THRESHOLD){
                 CallbackBridge.mouseX -= ((mSwapXY ? mStoredY : mStoredX) * xFactor);
                 mStoredX = 0;
-                updatePosition = true;
+                CallbackBridge.sendCursorPos(CallbackBridge.mouseX, CallbackBridge.mouseY);
             }
 
-            if(Math.abs(mStoredY) > SINGLE_AXIS_LOW_PASS_THRESHOLD) {
+            // Check if the absolute value of Y is greater than the threshold
+            if(absY > SINGLE_AXIS_LOW_PASS_THRESHOLD) {
                 CallbackBridge.mouseY += ((mSwapXY ? mStoredX : mStoredY) * yFactor);
                 mStoredY = 0;
-                updatePosition = true;
+                CallbackBridge.sendCursorPos(CallbackBridge.mouseX, CallbackBridge.mouseY);
             }
-        }
-
-        if(updatePosition){
-            CallbackBridge.sendCursorPos(CallbackBridge.mouseX, CallbackBridge.mouseY);
         }
     }
 
@@ -162,8 +164,8 @@ public class GyroControl implements SensorEventListener, GrabListener {
     public void onGrabState(boolean isGrabbing) {
         mFirstPass = true;
         mShouldHandleEvents = isGrabbing;
+        resetDamper();
     }
-
 
     /**
      * Compute the moving average of the gyroscope to reduce jitter
@@ -178,8 +180,8 @@ public class GyroControl implements SensorEventListener, GrabListener {
 
         System.arraycopy(newAngleDifference, 0, mAngleBuffer[mHistoryIndex], 0, 3);
 
-        xTotal += mAngleBuffer[mHistoryIndex][1];
-        yTotal += mAngleBuffer[mHistoryIndex][2];
+        xTotal += newAngleDifference[1];
+        yTotal += newAngleDifference[2];
 
         // compute the moving average
         xAverage = xTotal / mAngleBuffer.length;
@@ -214,36 +216,7 @@ public class GyroControl implements SensorEventListener, GrabListener {
                 return; //change nothing
             }
 
-
-
-            switch (mSurfaceRotation){
-                case Surface.ROTATION_90:
-                case Surface.ROTATION_270:
-                    mSwapXY = false;
-                    if(225 <  i && i < 315) {
-                        xFactor = -1;
-                        yFactor = 1;
-                    }else if(45 < i && i < 135) {
-                        xFactor = 1;
-                        yFactor = -1;
-                    }
-                    break;
-
-                case Surface.ROTATION_0:
-                case Surface.ROTATION_180:
-                    mSwapXY = true;
-                    if((315 < i && i <= 360) || (i < 45) ) {
-                        xFactor = 1;
-                        yFactor = 1;
-                    }else if(135 < i && i < 225) {
-                        xFactor = -1;
-                        yFactor = -1;
-                    }
-                    break;
-            }
-
-            if(LauncherPreferences.PREF_GYRO_INVERT_X) xFactor *= -1;
-            if(LauncherPreferences.PREF_GYRO_INVERT_Y) yFactor *= -1;
+            updateOrientation();
         }
     }
 }
