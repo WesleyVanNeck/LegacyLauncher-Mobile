@@ -3,6 +3,7 @@ plugins {
 }
 
 group = 'org.lwjgl.glfw'
+version = '1.0.0' // Add a version number
 
 configurations.default.setCanBeResolved(true)
 
@@ -12,10 +13,9 @@ jar {
     destinationDirectory.set(file("../app_pojavlauncher/src/main/assets/components/lwjgl3/"))
     // Auto update the version with a timestamp so the project jar gets updated by Pojav
     File versionFile = file("../app_pojavlauncher/src/main/assets/components/lwjgl3/version")
-    versionFile.write(String.valueOf(new Date().getTime()))
+    versionFile.writeText(System.currentTimeMillis().toString()) // Use writeText instead of write
     from {
         configurations.default.collect {
-            println(it.getName())
             it.isDirectory() ? it : zipTree(it)
         }
     }
@@ -31,3 +31,25 @@ java {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
+
+// Add a task to increment the version number
+task incrementVersion {
+    doFirst {
+        def currentVersion = version.toString()
+        def splitVersion = currentVersion.split('.')
+        splitVersion[splitVersion.size() - 1] = (Integer.parseInt(splitVersion[splitVersion.size() - 1]) + 1).toString()
+        version = splitVersion.join('.')
+    }
+}
+
+// Add a task to update the version number in the version file
+task updateVersionFile {
+    doFirst {
+        File versionFile = file("../app_pojavlauncher/src/main/assets/components/lwjgl3/version")
+        versionFile.writeText(version.toString())
+    }
+}
+
+// Add a task to build and update the version number
+task buildAndUpdateVersion(dependsOn: ['jar', 'incrementVersion', 'updateVersionFile'])
+
