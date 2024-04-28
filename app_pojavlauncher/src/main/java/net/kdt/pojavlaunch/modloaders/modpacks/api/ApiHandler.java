@@ -5,8 +5,6 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 
-import net.kdt.pojavlaunch.Tools;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,16 +15,13 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
-@SuppressWarnings("unused")
-public class ApiHandler {
+public class ApiHandler<T> {
     public final String baseUrl;
     public final Map<String, String> additionalHeaders;
 
     public ApiHandler(String url) {
-        baseUrl = url;
-        additionalHeaders = null;
+        this(url, null);
     }
 
     public ApiHandler(String url, String apiKey) {
@@ -35,28 +30,28 @@ public class ApiHandler {
         additionalHeaders.put("x-api-key", apiKey);
     }
 
-    public <T> T get(String endpoint, Class<T> tClass) {
+    public T get(String endpoint, Class<T> tClass) throws IOException {
         return getFullUrl(additionalHeaders, baseUrl + "/" + endpoint, tClass);
     }
 
-    public <T> T get(String endpoint, HashMap<String, Object> query, Class<T> tClass) {
+    public T get(String endpoint, HashMap<String, Object> query, Class<T> tClass) throws IOException {
         return getFullUrl(additionalHeaders, baseUrl + "/" + endpoint, query, tClass);
     }
 
-    public <T> T post(String endpoint, T body, Class<T> tClass) {
+    public T post(String endpoint, T body, Class<T> tClass) throws IOException {
         return postFullUrl(additionalHeaders, baseUrl + "/" + endpoint, body, tClass);
     }
 
-    public <T> T post(String endpoint, HashMap<String, Object> query, T body, Class<T> tClass) {
+    public T post(String endpoint, HashMap<String, Object> query, T body, Class<T> tClass) throws IOException {
         return postFullUrl(additionalHeaders, baseUrl + "/" + endpoint, query, body, tClass);
     }
 
     //Make a get request and return the response as a raw string;
-    public static String getRaw(String url) {
+    public static String getRaw(String url) throws IOException {
         return getRaw(null, url);
     }
 
-    public static String getRaw(Map<String, String> headers, String url) {
+    public static String getRaw(Map<String, String> headers, String url) throws IOException {
         Log.d("ApiHandler", url);
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
@@ -69,15 +64,15 @@ public class ApiHandler {
             return data;
         } catch (IOException e) {
             e.printStackTrace();
+            throw e;
         }
-        return null;
     }
 
-    public static String postRaw(String url, String body) {
+    public static String postRaw(String url, String body) throws IOException {
         return postRaw(null, url, body);
     }
 
-    public static String postRaw(Map<String, String> headers, String url, String body) {
+    public static String postRaw(Map<String, String> headers, String url, String body) throws IOException {
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("POST");
@@ -99,8 +94,8 @@ public class ApiHandler {
             return data;
         } catch (IOException e) {
             e.printStackTrace();
+            throw e;
         }
-        return null;
     }
 
     private static void addHeaders(HttpURLConnection connection, Map<String, String> headers) {
@@ -122,35 +117,35 @@ public class ApiHandler {
         return params.substring(0, params.length() - 1);
     }
 
-    public static <T> T getFullUrl(String url, Class<T> tClass) {
-        return getFullUrl(null, url, tClass);
+    public T getFullUrl(Class<T> tClass) throws IOException {
+        return getFullUrl(additionalHeaders, baseUrl, tClass);
     }
 
-    public static <T> T getFullUrl(String url, HashMap<String, Object> query, Class<T> tClass) {
-        return getFullUrl(null, url, query, tClass);
+    public T getFullUrl(HashMap<String, Object> query, Class<T> tClass) throws IOException {
+        return getFullUrl(additionalHeaders, baseUrl, query, tClass);
     }
 
-    public static <T> T postFullUrl(String url, T body, Class<T> tClass) {
-        return postFullUrl(null, url, body, tClass);
+    public T postFullUrl(T body, Class<T> tClass) throws IOException {
+        return postFullUrl(additionalHeaders, baseUrl, body, tClass);
     }
 
-    public static <T> T postFullUrl(String url, HashMap<String, Object> query, T body, Class<T> tClass) {
-        return postFullUrl(null, url, query, body, tClass);
+    public T postFullUrl(HashMap<String, Object> query, T body, Class<T> tClass) throws IOException {
+        return postFullUrl(additionalHeaders, baseUrl, query, body, tClass);
     }
 
-    public static <T> T getFullUrl(Map<String, String> headers, String url, Class<T> tClass) {
+    public T getFullUrl(Map<String, String> headers, String url, Class<T> tClass) throws IOException {
         return new Gson().fromJson(getRaw(headers, url), tClass);
     }
 
-    public static <T> T getFullUrl(Map<String, String> headers, String url, HashMap<String, Object> query, Class<T> tClass) {
+    public T getFullUrl(Map<String, String> headers, String url, HashMap<String, Object> query, Class<T> tClass) throws IOException {
         return getFullUrl(headers, url + parseQueries(query), tClass);
     }
 
-    public static <T> T postFullUrl(Map<String, String> headers, String url, T body, Class<T> tClass) {
+    public T postFullUrl(Map<String, String> headers, String url, T body, Class<T> tClass) throws IOException {
         return new Gson().fromJson(postRaw(headers, url, body.toString()), tClass);
     }
 
-    public static <T> T postFullUrl(Map<String, String> headers, String url, HashMap<String, Object> query, T body, Class<T> tClass) {
+    public T postFullUrl(Map<String, String> headers, String url, HashMap<String, Object> query, T body, Class<T> tClass) throws IOException {
         return new Gson().fromJson(postRaw(headers, url + parseQueries(query), body.toString()), tClass);
     }
 
