@@ -1,3 +1,5 @@
-1. This app (while idle) does NOT collect any sensitive information, and does NOT use network (exception is the "News" page, it uses network to load the launcher news)
-2. While running Minecraft, app also does NOT collect any sensitive information about your device. Snooper by Mojang does.
-3. Some sensitive data is stored in crash reports after the game crashes, but it's not being shared to anyone except the current user.
+1. This app, while in idle state, does not collect any sensitive information and does not use network services, with the exception of the "News" page which requires network connectivity to load launcher news.
+
+2. During the operation of Minecraft, this app does not collect any sensitive information about the user's device. However, it is important to note that Snooper by Mojang may collect such information.
+
+3. In the event of a game crash, certain sensitive data may be stored in crash reports for the user's review. This information is not shared with any third parties and is intended for the user's use only.
