@@ -19,6 +19,7 @@ LOCAL_MODULE := pojavexec
 LOCAL_SRC_FILES := \
     bigcoreaffinity.c \
     egl_bridge.c \
+    ctxbridges/loader_dlopen.c \
     ctxbridges/gl_bridge.c \
     ctxbridges/osm_bridge.c \
     ctxbridges/egl_loader.c \
