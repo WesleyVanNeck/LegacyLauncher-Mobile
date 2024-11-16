@@ -8,6 +8,9 @@ HERE_PATH := $(LOCAL_PATH)
 
 LOCAL_PATH := $(HERE_PATH)
 
+$(call import-module,prefab/bytehook)
+LOCAL_PATH := $(HERE_PATH)
+
 
 include $(CLEAR_VARS)
 # Link GLESv2 for test
