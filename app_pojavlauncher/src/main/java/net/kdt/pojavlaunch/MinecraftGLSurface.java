@@ -67,7 +67,7 @@ public class MinecraftGLSurface extends View implements GrabListener {
             .remapDpad(true));
 
     /* Resolution scaler option, allow downsizing a window */
-    private final float mScaleFactor = LauncherPreferences.PREF_SCALE_FACTOR/100f;
+    private float mScaleFactor = LauncherPreferences.PREF_SCALE_FACTOR/100f;
     /* Sensitivity, adjusted according to screen size */
     private final double mSensitivityFactor = (1.4 * (1080f/ Tools.getDisplayMetrics((Activity) getContext()).heightPixels));
 
@@ -105,7 +105,7 @@ public class MinecraftGLSurface extends View implements GrabListener {
      *                 when the cursor is not grabbed
      */
     public void start(boolean isAlreadyRunning, AbstractTouchpad touchpad){
-        if(MainActivity.isAndroid8OrHigher()) setUpPointerCapture(touchpad);
+        if(Tools.isAndroid8OrHigher()) setUpPointerCapture(touchpad);
         mInGUIProcessor.setAbstractTouchpad(touchpad);
         if(LauncherPreferences.PREF_USE_ALTERNATE_SURFACE){
             SurfaceView surfaceView = new SurfaceView(getContext());
@@ -188,7 +188,7 @@ public class MinecraftGLSurface extends View implements GrabListener {
         for (int i = 0; i < e.getPointerCount(); i++) {
             int toolType = e.getToolType(i);
             if(toolType == MotionEvent.TOOL_TYPE_MOUSE) {
-                if(MainActivity.isAndroid8OrHigher() &&
+                if(Tools.isAndroid8OrHigher() &&
                         mPointerCapture != null) {
                     mPointerCapture.handleAutomaticCapture();
                     return true;
@@ -337,6 +337,7 @@ public class MinecraftGLSurface extends View implements GrabListener {
             post(this::refreshSize);
             return;
         }
+        mScaleFactor = LauncherPreferences.PREF_SCALE_FACTOR/100f;
         // Use the width and height of the View instead of display dimensions to avoid
         // getting squiched/stretched due to inconsistencies between the layout and
         // screen dimensions.
