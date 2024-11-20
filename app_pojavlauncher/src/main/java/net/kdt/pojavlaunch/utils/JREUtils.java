@@ -210,6 +210,7 @@ public class JREUtils {
         envMap.put("allow_higher_compat_version", "true");
         envMap.put("allow_glsl_extension_directive_midshader", "true");
         envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
+        envMap.put("MESA_NO_ERROR", "true");
 		envMap.put("MESA_VK_WSI_DEBUG", "nosync");
 		envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
 		envMap.put("MESA_VK_WSI_DEBUG", "sw");
