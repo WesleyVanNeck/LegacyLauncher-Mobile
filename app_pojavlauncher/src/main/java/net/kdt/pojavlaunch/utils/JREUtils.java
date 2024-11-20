@@ -213,7 +213,7 @@ public class JREUtils {
         envMap.put("MESA_NO_ERROR", "true");
 		envMap.put("MESA_VK_WSI_DEBUG", "nosync");
 		envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
-		envMap.put("MESA_VK_WSI_DEBUG", "sw");
+		//envMap.put("MESA_VK_WSI_DEBUG", "sw");
         envMap.put("VTEST_SOCKET_NAME", new File(Tools.DIR_CACHE, ".virgl_test").getAbsolutePath());
 
         envMap.put("LD_LIBRARY_PATH", LD_LIBRARY_PATH);
