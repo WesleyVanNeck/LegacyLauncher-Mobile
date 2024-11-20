@@ -35,8 +35,8 @@ public abstract class QuickSettingSideDialog extends com.kdt.SideDialogView<Cons
     private TextView mGyroSensitivityText, mGyroSensitivityDisplayText, mMouseSpeedText, mGestureDelayText, mGestureDelayDisplayText, mResolutionText;
 
     private boolean mOriginalGyroEnabled, mOriginalGyroXEnabled, mOriginalGyroYEnabled, mOriginalGestureDisabled;
-    private float mOriginalGyroSensitivity, mOriginalMouseSpeed;
-    private int mOriginalGestureDelay, mOriginalResolution;
+    private float mOriginalGyroSensitivity, mOriginalMouseSpeed, mOriginalResolution;
+    private int mOriginalGestureDelay;
 
     public QuickSettingSideDialog(Context context, ViewGroup parent) {
         super(context, parent, R.layout.dialog_quick_setting);
@@ -103,11 +103,13 @@ public abstract class QuickSettingSideDialog extends com.kdt.SideDialogView<Cons
 
         mGyroXSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             PREF_GYRO_INVERT_X = isChecked;
+            onGyroStateChanged();
             LauncherPreferences.DEFAULT_PREF.edit().putBoolean("gyroInvertX", isChecked).apply();
         });
 
         mGyroYSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             PREF_GYRO_INVERT_Y = isChecked;
+            onGyroStateChanged();
             LauncherPreferences.DEFAULT_PREF.edit().putBoolean("gyroInvertY", isChecked).apply();
         });
 
@@ -147,12 +149,12 @@ public abstract class QuickSettingSideDialog extends com.kdt.SideDialogView<Cons
         mResolutionBar.setRange(25, 100);
         mResolutionBar.setIncrement(5);
         mResolutionBar.setOnSeekBarChangeListener((SimpleSeekBarListener) (seekBar, progress, fromUser) -> {
-            PREF_SCALE_FACTOR = progress;
+            PREF_SCALE_FACTOR = progress/100f;
             LauncherPreferences.DEFAULT_PREF.edit().putInt("resolutionRatio", progress).apply();
             mResolutionText.setText(progress + "%");
             onResolutionChanged();
         });
-        mResolutionBar.setProgress(mOriginalResolution);
+        mResolutionBar.setProgress((int) (mOriginalResolution * 100));
 
 
         updateGyroVisibility(mOriginalGyroEnabled);
@@ -217,7 +219,11 @@ public abstract class QuickSettingSideDialog extends com.kdt.SideDialogView<Cons
     /** Called when the resolution is changed. Use {@link LauncherPreferences#PREF_SCALE_FACTOR} */
     public abstract void onResolutionChanged();
 
-    /** Called when the gyro state is changed. Use {@link LauncherPreferences#PREF_ENABLE_GYRO} */
+    /** Called when the gyro state is changed.
+     * Use {@link LauncherPreferences#PREF_ENABLE_GYRO}
+     * Use {@link LauncherPreferences#PREF_GYRO_INVERT_X}
+     * Use {@link LauncherPreferences#PREF_GYRO_INVERT_Y}
+     */
     public abstract void onGyroStateChanged();
 
 }

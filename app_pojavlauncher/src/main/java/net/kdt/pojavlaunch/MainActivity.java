@@ -53,6 +53,7 @@ import net.kdt.pojavlaunch.customcontrols.EditorExitable;
 import net.kdt.pojavlaunch.customcontrols.keyboard.LwjglCharSender;
 import net.kdt.pojavlaunch.customcontrols.keyboard.TouchCharInput;
 import net.kdt.pojavlaunch.customcontrols.mouse.GyroControl;
+import net.kdt.pojavlaunch.customcontrols.mouse.HotbarView;
 import net.kdt.pojavlaunch.customcontrols.mouse.Touchpad;
 import net.kdt.pojavlaunch.lifecycle.ContextExecutor;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
@@ -84,6 +85,7 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
     private View mDrawerPullButton;
     private GyroControl mGyroControl = null;
     private ControlLayout mControlLayout;
+    private HotbarView mHotbarView;
 
     MinecraftProfile minecraftProfile;
 
@@ -190,7 +192,7 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
                     case 0: dialogForceClose(MainActivity.this); break;
                     case 1: openLogOutput(); break;
                     case 2: dialogSendCustomKey(); break;
-                    case 3: mQuickSettingSideDialog.appear(true); break;
+                    case 3: openQuickSettings(); break;
                     case 4: openCustomControls(); break;
                 }
                 drawerLayout.closeDrawers();
@@ -212,23 +214,6 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
                     Tools.showErrorRemote(e);
                 }
             });
-
-            mQuickSettingSideDialog = new QuickSettingSideDialog(this, mControlLayout) {
-                @Override
-                public void onResolutionChanged() {
-                    //TODO: reflect the change in event positions sent down to the game
-                    minecraftGLView.refreshSize();
-                }
-
-                @Override
-                public void onGyroStateChanged() {
-                    if (PREF_ENABLE_GYRO) {
-                        mGyroControl.enable();
-                    } else {
-                        mGyroControl.disable();
-                    }
-                }
-            };
         } catch (Throwable e) {
             Tools.showError(this, e, true);
         }
@@ -276,6 +261,7 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
         mControlLayout = findViewById(R.id.main_control_layout);
         touchCharInput = findViewById(R.id.mainTouchCharInput);
         mDrawerPullButton = findViewById(R.id.drawer_button);
+        mHotbarView = findViewById(R.id.hotbar_view);
     }
 
     @Override
@@ -398,6 +384,29 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
 
     private void openLogOutput() {
         loggerView.setVisibility(View.VISIBLE);
+    }
+
+    private void openQuickSettings() {
+        if(mQuickSettingSideDialog == null) {
+            mQuickSettingSideDialog = new QuickSettingSideDialog(this, mControlLayout) {
+                @Override
+                public void onResolutionChanged() {
+                    minecraftGLView.refreshSize();
+                    mHotbarView.onResolutionChanged();
+                }
+
+                @Override
+                public void onGyroStateChanged() {
+                    mGyroControl.updateOrientation();
+                    if (PREF_ENABLE_GYRO) {
+                        mGyroControl.enable();
+                    } else {
+                        mGyroControl.disable();
+                    }
+                }
+            };
+        }
+        Tools.runOnUiThread(() -> mQuickSettingSideDialog.appear(true));
     }
 
     public static void toggleMouse(Context ctx) {
