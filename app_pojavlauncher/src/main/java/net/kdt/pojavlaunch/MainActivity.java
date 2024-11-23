@@ -189,11 +189,10 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
                     android.R.layout.simple_list_item_1, getResources().getStringArray(R.array.menu_ingame));
             gameActionClickListener = (parent, view, position, id) -> {
                 switch(position) {
-                    case 0: dialogForceClose(MainActivity.this); break;
-                    case 1: openLogOutput(); break;
-                    case 2: dialogSendCustomKey(); break;
-                    case 3: openQuickSettings(); break;
-                    case 4: openCustomControls(); break;
+                    case 0: openLogOutput(); break;
+                    case 1: dialogSendCustomKey(); break;
+                    case 2: openQuickSettings(); break;
+                    case 3: openCustomControls(); break;
                 }
                 drawerLayout.closeDrawers();
             };
@@ -277,7 +276,9 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
         if (CallbackBridge.isGrabbing()){
             sendKeyPress(LwjglGlfwKeycode.GLFW_KEY_ESCAPE);
         }
-        mQuickSettingSideDialog.cancel();
+        if(mQuickSettingSideDialog != null) {
+            mQuickSettingSideDialog.cancel();
+        }
         CallbackBridge.nativeSetWindowAttrib(LwjglGlfwKeycode.GLFW_HOVERED, 0);
         super.onPause();
     }
@@ -406,7 +407,7 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
                 }
             };
         }
-        Tools.runOnUiThread(() -> mQuickSettingSideDialog.appear(true));
+        mQuickSettingSideDialog.appear(true);
     }
 
     public static void toggleMouse(Context ctx) {
@@ -415,19 +416,6 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
         Toast.makeText(ctx, touchpad.switchState()
                         ? R.string.control_mouseon : R.string.control_mouseoff,
                 Toast.LENGTH_SHORT).show();
-    }
-
-    public static void dialogForceClose(Context ctx) {
-        new AlertDialog.Builder(ctx)
-                .setMessage(R.string.mcn_exit_confirm)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(android.R.string.ok, (p1, p2) -> {
-                    try {
-                        Tools.fullyExit();
-                    } catch (Throwable th) {
-                        Log.w(Tools.APP_NAME, "Could not enable System.exit() method!", th);
-                    }
-                }).show();
     }
 
     @Override

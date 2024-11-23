@@ -19,6 +19,8 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
@@ -1435,5 +1437,23 @@ public final class Tools {
     public static void releaseRenderersCache() {
         sCompatibleRenderers = null;
         System.gc();
+    }
+
+    public static boolean deviceSupportsGyro(@NonNull Context context) {
+        return ((SensorManager)context.getSystemService(Context.SENSOR_SERVICE)).getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null;
+
+    }
+
+    public static void dialogForceClose(Context ctx) {
+        new android.app.AlertDialog.Builder(ctx)
+                .setMessage(R.string.mcn_exit_confirm)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(android.R.string.ok, (p1, p2) -> {
+                    try {
+                        Tools.fullyExit();
+                    } catch (Throwable th) {
+                        Log.w(Tools.APP_NAME, "Could not enable System.exit() method!", th);
+                    }
+                }).show();
     }
 }
