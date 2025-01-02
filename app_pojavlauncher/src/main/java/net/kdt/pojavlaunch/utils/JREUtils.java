@@ -208,10 +208,10 @@ public class JREUtils {
         envMap.put("MESA_GL_VERSION_OVERRIDE", "3.2");
         envMap.put("MESA_GLSL_VERSION_OVERRIDE", "320");
        // envMap.put("MESA_GLSL_CACHE_DIR", Tools.DIR_CACHE.getAbsolutePath());
-        //envMap.put("force_glsl_extensions_warn", "true");
+        envMap.put("force_glsl_extensions_warn", "true");
         envMap.put("allow_higher_compat_version", "true");
-     //   envMap.put("allow_glsl_extension_directive_midshader", "true");
-     //   envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
+        envMap.put("allow_glsl_extension_directive_midshader", "true");
+        envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
 	    
         envMap.put("LD_LIBRARY_PATH", LD_LIBRARY_PATH);
         envMap.put("PATH", jreHome + "/bin:" + Os.getenv("PATH"));
