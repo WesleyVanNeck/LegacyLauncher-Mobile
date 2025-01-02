@@ -207,17 +207,12 @@ public class JREUtils {
 
         envMap.put("MESA_GL_VERSION_OVERRIDE", "3.2");
         envMap.put("MESA_GLSL_VERSION_OVERRIDE", "320");
-        envMap.put("MESA_GLSL_CACHE_DIR", Tools.DIR_CACHE.getAbsolutePath());
-        envMap.put("force_glsl_extensions_warn", "true");
-        envMap.put("allow_higher_compat_version", "true");
-        envMap.put("allow_glsl_extension_directive_midshader", "true");
-        envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
-        envMap.put("MESA_NO_ERROR", "true");
-	envMap.put("MESA_VK_WSI_DEBUG", "nosync");
-	envMap.put("MESA_VK_WSI_PRESENT_MODE", "mailbox");
-	envMap.put("MESA_VK_WSI_DEBUG", "sw");
-        envMap.put("VTEST_SOCKET_NAME", new File(Tools.DIR_CACHE, ".virgl_test").getAbsolutePath());
-
+       // envMap.put("MESA_GLSL_CACHE_DIR", Tools.DIR_CACHE.getAbsolutePath());
+       // envMap.put("force_glsl_extensions_warn", "true");
+       // envMap.put("allow_higher_compat_version", "true");
+     //   envMap.put("allow_glsl_extension_directive_midshader", "true");
+     //   envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
+	    
         envMap.put("LD_LIBRARY_PATH", LD_LIBRARY_PATH);
         envMap.put("PATH", jreHome + "/bin:" + Os.getenv("PATH"));
         if(FFmpegPlugin.isAvailable) {
